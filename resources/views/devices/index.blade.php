@@ -1,0 +1,3 @@
+<table>
+   device list
+</table>
