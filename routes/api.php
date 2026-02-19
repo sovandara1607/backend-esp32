@@ -12,7 +12,8 @@ Route::get('/user', function (Request $request) {
 // 1. ESP32 checks this URL
 Route::get('/fan/status', function () {
     return response()->json([
-        'status' => Cache::get('fan_state', 'off')
+        'status' => Cache::get('fan_state', 'off'),
+        'speed' => (int) Cache::get('fan_speed', 255),
     ]);
 });
 
@@ -26,4 +27,11 @@ Route::get('/fan/on', function () {
 Route::get('/fan/off', function () {
     Cache::forever('fan_state', 'off');
     return "Command Sent: OFF";
+});
+
+// 4. Set fan speed (0-255)
+Route::get('/fan/speed/{value}', function ($value) {
+    $speed = max(0, min(255, (int) $value));
+    Cache::forever('fan_speed', $speed);
+    return "Speed set to: " . $speed;
 });
