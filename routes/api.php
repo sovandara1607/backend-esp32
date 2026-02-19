@@ -1,29 +1,24 @@
 <?php
 
+use App\Http\Controllers\FanController;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
 })->middleware('auth:sanctum');
 
+// ESP32 polls this to get current mode, speed, and status
+Route::get('/fan/status', [FanController::class, 'getStatus']);
 
-// 1. ESP32 checks this URL
-Route::get('/fan/status', function () {
-    return response()->json([
-        'status' => Cache::get('fan_state', 'off')
-    ]);
-});
+// Web dashboard polls this for complete state (includes temperature)
+Route::get('/fan/state', [FanController::class, 'getFullState']);
 
-// 2. You visit this to turn it ON
-Route::get('/fan/on', function () {
-    Cache::forever('fan_state', 'on');
-    return "Command Sent: ON";
-});
+// Set fan speed 0-100 (used by manual slider and voice commands)
+Route::post('/fan/speed', [FanController::class, 'setSpeed']);
 
-// 3. You visit this to turn it OFF
-Route::get('/fan/off', function () {
-    Cache::forever('fan_state', 'off');
-    return "Command Sent: OFF";
-});
+// Switch control mode (manual, voice, temperature)
+Route::post('/fan/mode', [FanController::class, 'setMode']);
+
+// ESP32 reports current temperature reading
+Route::post('/fan/temperature', [FanController::class, 'reportTemperature']);

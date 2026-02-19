@@ -1,0 +1,188 @@
+========================================
+  ESP32 Fan Control - Setup Guide
+========================================
+
+WHAT WAS CHANGED
+================
+
+4 files were modified/created in the Laravel project:
+
+1. app/Http/Controllers/FanController.php  (rewritten)
+   - 5 API methods: getStatus, getFullState, setSpeed, setMode, reportTemperature
+   - All state stored in Laravel Cache (no new database tables needed)
+
+2. routes/api.php  (rewritten)
+   - GET  /api/fan/status        -> ESP32 polls this
+   - GET  /api/fan/state         -> Web UI polls this
+   - POST /api/fan/speed         -> Set speed 0-100%
+   - POST /api/fan/mode          -> Switch mode (manual/voice/temperature)
+   - POST /api/fan/temperature   -> ESP32 posts temperature
+
+3. routes/web.php  (modified)
+   - Root URL (/) now shows the fan control dashboard
+
+4. resources/views/fan-control.blade.php  (new file)
+   - 3-tab web interface: Manual, Voice, Temperature Auto
+
+
+STEP 1: START THE LARAVEL SERVER
+================================
+
+Open TWO terminals. Both should be in the project folder:
+  cd /home/ye/Documents/cs\ 397/Final/backend-esp32
+
+Terminal 1 - Laravel server:
+  php artisan serve
+
+Terminal 2 - Vite dev server (for Tailwind CSS):
+  npm run dev
+
+Now open Chrome browser and go to:
+  http://localhost:8000
+
+You should see the fan control dashboard with 3 tabs.
+
+
+STEP 2: TEST WITHOUT ESP32
+===========================
+
+You can test everything without the ESP32 hardware:
+
+a) Manual Tab:
+   - Drag the slider or click preset buttons (OFF, 25%, 50%, 75%, 100%)
+   - The header should update (green dot + "Fan ON at XX%")
+
+b) Voice Tab (Chrome only):
+   - Click the microphone button
+   - Allow microphone permission when prompted
+   - Say "turn on the fan" or "speed 50 percent"
+   - The recognized text and action should appear
+
+c) Temperature Tab:
+   - Open a third terminal and simulate ESP32 sending temperature:
+
+   curl -X POST http://localhost:8000/api/fan/temperature \
+     -H "Content-Type: application/json" \
+     -d '{"temperature": 27.5}'
+
+   - The dashboard should show 27.5 C and highlight the 50% (MED) row
+
+   Try different temperatures:
+   curl -X POST http://localhost:8000/api/fan/temperature \
+     -H "Content-Type: application/json" \
+     -d '{"temperature": 18.0}'
+
+   curl -X POST http://localhost:8000/api/fan/temperature \
+     -H "Content-Type: application/json" \
+     -d '{"temperature": 35.0}'
+
+d) Check API manually:
+   curl http://localhost:8000/api/fan/status
+   -> Should return: {"mode":"manual","speed":0,"status":"off"}
+
+   curl http://localhost:8000/api/fan/state
+   -> Should return full state with temperature data
+
+
+STEP 3: MAKE SERVER ACCESSIBLE TO ESP32
+=========================================
+
+The ESP32 needs to reach your Laravel server over WiFi.
+
+Option A - Same network (easiest):
+  1. Find your computer's local IP address:
+     hostname -I    (on Linux)
+     ipconfig       (on Windows)
+     Example: 192.168.1.100
+
+  2. Start Laravel on that IP:
+     php artisan serve --host=0.0.0.0
+
+  3. In the ESP32 code, set:
+     const char* serverURL = "http://192.168.1.100:8000";
+
+Option B - ngrok (access from anywhere):
+  1. Install ngrok: https://ngrok.com
+  2. Run: ngrok http 8000
+  3. Use the ngrok URL in ESP32 code (e.g., https://xxxx.ngrok.io)
+
+
+STEP 4: UPLOAD ESP32 CODE
+===========================
+
+1. Open Arduino IDE
+2. Install these libraries via Library Manager:
+   - ArduinoJson (by Benoit Blanchon, version 6.x or 7.x)
+   - (WiFi and HTTPClient are built-in for ESP32)
+
+3. Open the file:
+   esp32-firmware/fan_control.ino
+
+4. Edit these values at the top of the file:
+   - WIFI_SSID      -> Your WiFi network name
+   - WIFI_PASSWORD   -> Your WiFi password
+   - SERVER_URL      -> Your computer's IP (e.g., "http://192.168.1.100:8000")
+   - FAN_PIN         -> The GPIO pin connected to your fan MOSFET/driver
+   - LM35_PIN        -> The GPIO pin connected to the LM35 sensor
+
+5. Select board: "ESP32 Dev Module" (or your specific ESP32 board)
+6. Select the correct COM port
+7. Click Upload
+
+
+HARDWARE WIRING
+================
+
+ESP32 Pin Connections:
+
+  FAN CONTROL (via MOSFET/motor driver):
+    ESP32 GPIO 18  ->  MOSFET Gate (or motor driver input)
+    MOSFET Drain   ->  Fan negative wire
+    MOSFET Source   ->  GND
+    Fan positive    ->  External power supply (+)
+    External GND    ->  ESP32 GND (common ground)
+
+  LM35 TEMPERATURE SENSOR:
+    LM35 VCC  ->  ESP32 3.3V (or 5V)
+    LM35 GND  ->  ESP32 GND
+    LM35 OUT  ->  ESP32 GPIO 34 (ADC pin, input only)
+
+  Note: GPIO 34 is used because it is an input-only ADC pin,
+  which works well for analog sensor reading.
+
+
+TEMPERATURE THRESHOLDS
+=======================
+
+The ESP32 code uses these thresholds (matching the website display):
+
+  Below 20 C  ->  Fan OFF  (0%)
+  23 C - 25 C ->  Fan LOW  (25%)
+  26 C - 29 C ->  Fan MED  (50%)
+  30 C+       ->  Fan HIGH (100%)
+
+These are hardcoded in both the ESP32 firmware and the web dashboard.
+To change them, edit both files.
+
+
+TROUBLESHOOTING
+================
+
+Problem: Website shows but slider doesn't work
+  -> Open browser DevTools (F12) -> Console tab -> check for errors
+  -> Make sure both "php artisan serve" and "npm run dev" are running
+
+Problem: Voice control doesn't work
+  -> Must use Chrome or Edge browser
+  -> Must allow microphone permission
+  -> Must be on localhost or HTTPS (speech API requirement)
+
+Problem: Temperature tab shows "Waiting for ESP32 data..."
+  -> ESP32 needs to POST temperature to /api/fan/temperature
+  -> Test with curl command shown in Step 2c above
+
+Problem: ESP32 can't connect to server
+  -> Make sure ESP32 and computer are on the same WiFi network
+  -> Make sure Laravel is running with --host=0.0.0.0
+  -> Check the IP address is correct in ESP32 code
+  -> Try pinging your computer from another device on the network
