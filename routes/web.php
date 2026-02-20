@@ -4,7 +4,6 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\AlertWebController;
-use App\Http\Controllers\AdminController;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public / Guest Routes ─────────────────────
@@ -44,15 +43,3 @@ Route::middleware('auth')->group(function () {
         return view('voice-control');
     })->name('voice-control');
 });
-
-// ─── Admin Routes ───────────────────────────────
-Route::middleware(['auth', \App\Http\Middleware\AdminMiddleware::class])
-    ->prefix('admin')
-    ->name('admin.')
-    ->group(function () {
-        Route::get('/', [AdminController::class, 'index'])->name('dashboard');
-        Route::get('/users', [AdminController::class, 'users'])->name('users');
-        Route::get('/devices', [AdminController::class, 'devices'])->name('devices');
-        Route::patch('/users/{user}/toggle-admin', [AdminController::class, 'toggleAdmin'])->name('toggle-admin');
-        Route::delete('/users/{user}', [AdminController::class, 'deleteUser'])->name('delete-user');
-    });
