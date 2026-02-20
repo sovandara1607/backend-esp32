@@ -44,9 +44,9 @@
                   onchange="loadChartData()">
                   <option value="temperature">Temperature</option>
                   <option value="humidity">Humidity</option>
-                  <option value="light">Light</option>
+                  <!-- <option value="light">Light</option>
                   <option value="pressure">Pressure</option>
-                  <option value="gas">Gas</option>
+                  <option value="gas">Gas</option> -->
                </select>
                <select id="chart-hours" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
                   onchange="loadChartData()">
