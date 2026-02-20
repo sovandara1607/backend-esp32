@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'sinric' => [
+        'app_key'    => env('SINRIC_APP_KEY'),
+        'app_secret' => env('SINRIC_APP_SECRET'),
+        'device_id'  => env('SINRIC_DEVICE_ID'),
+    ],
+
 ];

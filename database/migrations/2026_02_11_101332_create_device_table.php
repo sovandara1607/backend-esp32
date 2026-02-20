@@ -11,12 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('device', function (Blueprint $table) {
+        Schema::create('devices', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->string('name');
-            $table->string('device_type');
-            $table->string('device_identifier');
+            $table->string('device_type'); // e.g. 'esp32', 'esp8266', 'arduino'
+            $table->string('device_identifier')->unique();
+            $table->text('description')->nullable();
+            $table->string('location')->nullable();
+            $table->enum('status', ['online', 'offline', 'maintenance'])->default('offline');
+            $table->boolean('is_active')->default(true);
+            $table->json('configuration')->nullable();
+            $table->timestamp('last_seen_at')->nullable();
             $table->timestamps();
         });
     }
@@ -26,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('device');
+        Schema::dropIfExists('devices');
     }
 };
