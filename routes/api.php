@@ -13,8 +13,12 @@ use App\Http\Controllers\Api\SinricController;
 Route::post('/register', [AuthController::class, 'apiRegister']);
 Route::post('/login', [AuthController::class, 'apiLogin']);
 
-// ─── ESP32 Fan Control (public — backward compatible) ──
+// ─── ESP32 Fan Control ─────────────────────────
 Route::get('/fan/status', function () {
+    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
+    if ($device) {
+        $device->update(['status' => 'online', 'last_seen_at' => now()]);
+    }
     return response()->json([
         'status' => Cache::get('fan_state', 'off'),
         'speed' => (int) Cache::get('fan_speed', 255),
@@ -23,17 +27,45 @@ Route::get('/fan/status', function () {
 
 Route::get('/fan/on', function () {
     Cache::forever('fan_state', 'on');
+    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
+    if ($device) {
+        $device->commands()->create([
+            'user_id' => $device->user_id,
+            'command' => 'on',
+            'status' => 'executed',
+            'executed_at' => now(),
+        ]);
+    }
     return response()->json(['message' => 'Command Sent: ON', 'status' => 'on']);
 });
 
 Route::get('/fan/off', function () {
     Cache::forever('fan_state', 'off');
+    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
+    if ($device) {
+        $device->commands()->create([
+            'user_id' => $device->user_id,
+            'command' => 'off',
+            'status' => 'executed',
+            'executed_at' => now(),
+        ]);
+    }
     return response()->json(['message' => 'Command Sent: OFF', 'status' => 'off']);
 });
 
 Route::get('/fan/speed/{value}', function ($value) {
     $speed = max(0, min(255, (int) $value));
     Cache::forever('fan_speed', $speed);
+    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
+    if ($device) {
+        $device->commands()->create([
+            'user_id' => $device->user_id,
+            'command' => 'set_speed',
+            'payload' => ['speed' => $speed],
+            'status' => 'executed',
+            'executed_at' => now(),
+        ]);
+    }
     return response()->json(['message' => 'Speed set to: ' . $speed, 'speed' => $speed]);
 });
 

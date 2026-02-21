@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class DeviceController extends Controller
 {
@@ -131,6 +132,14 @@ class DeviceController extends Controller
             'status' => 'pending',
         ]);
 
+        // Sync with fan cache so ESP32 picks it up via /api/fan/status
+        match ($validated['command']) {
+            'on' => Cache::forever('fan_state', 'on'),
+            'off' => Cache::forever('fan_state', 'off'),
+            'set_speed' => Cache::forever('fan_speed', $validated['payload']['speed'] ?? 255),
+            default => null,
+        };
+
         return back()->with('success', "Command '{$validated['command']}' sent to device.");
     }
 
@@ -139,7 +148,7 @@ class DeviceController extends Controller
      */
     private function authorizeDevice(Device $device): void
     {
-        if ($device->user_id !== Auth::id() && !Auth::user()->isAdmin()) {
+        if ($device->user_id !== Auth::id()) {
             abort(403, 'Unauthorized access to this device.');
         }
     }
