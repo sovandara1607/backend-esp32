@@ -163,7 +163,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                      </svg>
-                     <span class="text-xs">"Hey Google, turn on the fan"</span>
+                     <span class="text-xs">"Hey Gout, turn on the fan"</span>
                   </div>
                   <span
                      class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
@@ -179,7 +179,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                      </svg>
-                     <span class="text-xs">"Hey Google, turn off the fan"</span>
+                     <span class="text-xs">"Hey Gout, turn off the fan"</span>
                   </div>
                   <span
                      class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
@@ -195,7 +195,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                      </svg>
-                     <span class="text-xs">"Hey Google, set the fan to 50 percent"</span>
+                     <span class="text-xs">"Hey Gout, set the fan to 50 percent"</span>
                   </div>
                   <span
                      class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
@@ -211,7 +211,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                      </svg>
-                     <span class="text-xs">"Hey Google, what's the temperature?"</span>
+                     <span class="text-xs">"Hey Gout, what's the temperature?"</span>
                   </div>
                   <span
                      class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
@@ -227,7 +227,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                      </svg>
-                     <span class="text-xs">"Hey Google, what's the humidity?"</span>
+                     <span class="text-xs">"Hey Gout, what's the humidity?"</span>
                   </div>
                   <span
                      class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
@@ -243,7 +243,7 @@
                         <path stroke-linecap="round" stroke-linejoin="round"
                            d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                      </svg>
-                     <span class="text-xs">"Hey Google, turn off all devices"</span>
+                     <span class="text-xs">"Hey Gout, turn off all devices"</span>
                   </div>
                   <span
                      class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
