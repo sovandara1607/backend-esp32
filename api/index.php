@@ -50,5 +50,37 @@ putenv('SESSION_DRIVER=' . ($_ENV['SESSION_DRIVER'] ?? 'cookie'));
 putenv('CACHE_STORE=' . ($_ENV['CACHE_STORE'] ?? 'array'));
 putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
 
-// Forward the request to the Laravel application
-require __DIR__ . '/../public/index.php';
+// Debug endpoint — visit /api/debug to see what's going on
+if (($_SERVER['REQUEST_URI'] ?? '') === '/api/debug') {
+   header('Content-Type: application/json');
+   echo json_encode([
+      'php_version' => PHP_VERSION,
+      'env_APP_KEY' => !empty(getenv('APP_KEY')) ? 'SET (' . strlen(getenv('APP_KEY')) . ' chars)' : 'NOT SET',
+      'env_APP_ENV' => getenv('APP_ENV') ?: 'NOT SET',
+      'env_APP_DEBUG' => getenv('APP_DEBUG') ?: 'NOT SET',
+      'env_DB_HOST' => getenv('DB_HOST') ?: 'NOT SET',
+      'env_DB_DATABASE' => getenv('DB_DATABASE') ?: 'NOT SET',
+      'env_DB_CONNECTION' => getenv('DB_CONNECTION') ?: 'NOT SET',
+      'vendor_autoload' => file_exists(__DIR__ . '/../vendor/autoload.php') ? 'EXISTS' : 'MISSING',
+      'public_index' => file_exists(__DIR__ . '/../public/index.php') ? 'EXISTS' : 'MISSING',
+      'bootstrap_app' => file_exists(__DIR__ . '/../bootstrap/app.php') ? 'EXISTS' : 'MISSING',
+      'composer_json' => file_exists(__DIR__ . '/../composer.json') ? 'EXISTS' : 'MISSING',
+      'tmp_storage' => is_dir('/tmp/storage') ? 'EXISTS' : 'MISSING',
+      'cwd' => getcwd(),
+      'script_dir' => __DIR__,
+   ], JSON_PRETTY_PRINT);
+   exit;
+}
+
+// Forward the request to the Laravel application — wrapped in try/catch
+try {
+   require __DIR__ . '/../public/index.php';
+} catch (\Throwable $e) {
+   header('Content-Type: application/json', true, 500);
+   echo json_encode([
+      'error' => $e->getMessage(),
+      'file' => $e->getFile(),
+      'line' => $e->getLine(),
+      'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 15),
+   ], JSON_PRETTY_PRINT);
+}
