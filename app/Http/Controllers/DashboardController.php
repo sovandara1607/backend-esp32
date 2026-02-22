@@ -41,6 +41,11 @@ class DashboardController extends Controller
             'speed' => (int) Cache::get('fan_speed', 255),
         ];
 
+        // Temperature control
+        $profiles = $user->temperatureProfiles()->with('rules')->latest()->get();
+        $activeProfile = $profiles->firstWhere('is_active', true);
+        $tempControlActive = $activeProfile !== null;
+
         return view('dashboard', compact(
             'devices',
             'totalDevices',
@@ -50,6 +55,9 @@ class DashboardController extends Controller
             'unreadAlertCount',
             'recentSensorData',
             'fanStatus',
+            'profiles',
+            'activeProfile',
+            'tempControlActive',
         ));
     }
 }
