@@ -1,0 +1,12 @@
+node_modules
+/storage/logs
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/views
+tests
+.env
+.env.backup
+.env.production
+phpunit.xml
+.phpunit.cache
+.phpunit.result.cache
