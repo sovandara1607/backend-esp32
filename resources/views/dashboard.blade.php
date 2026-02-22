@@ -2,7 +2,7 @@
 @section('title', 'Dashboard')
 
 @section('content')
-{{-- Stats --}}
+{{-- ═══ Stats Bar ═══ --}}
 <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
    <div class="border border-neutral-200 rounded-lg p-4">
       <p class="text-xs text-neutral-500 uppercase tracking-wide">Total Devices</p>
@@ -23,10 +23,10 @@
 </div>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-   {{-- Left Column --}}
+   {{-- ═══ Left Column (2/3) ═══ --}}
    <div class="lg:col-span-2 space-y-6">
 
-      {{-- Sensor Chart --}}
+      {{-- ─── Sensor Chart ─── --}}
       <div class="border border-neutral-200 rounded-lg p-5">
          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h3 class="text-sm font-semibold">Sensor Data</h3>
@@ -44,9 +44,6 @@
                   onchange="loadChartData()">
                   <option value="temperature">Temperature</option>
                   <option value="humidity">Humidity</option>
-                  <!-- <option value="light">Light</option>
-                  <option value="pressure">Pressure</option>
-                  <option value="gas">Gas</option> -->
                </select>
                <select id="chart-hours" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
                   onchange="loadChartData()">
@@ -63,9 +60,9 @@
          <p id="chart-empty" class="text-center text-neutral-400 text-xs mt-3 hidden">No sensor data available.</p>
       </div>
 
-      {{-- Fan Control --}}
+      {{-- ─── Fan Control ─── --}}
       <div class="border border-neutral-200 rounded-lg p-5">
-         <h3 class="text-sm font-semibold mb-4">Fan Control (ESP32)</h3>
+         <h3 class="text-sm font-semibold mb-4">Fan Control</h3>
          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center space-x-4">
                <svg id="fan-icon" class="w-12 h-12 text-neutral-300 transition-all duration-300"
@@ -82,10 +79,15 @@
                   <p id="fan-status" class="text-lg font-bold text-neutral-300">--</p>
                </div>
             </div>
-            <button id="fan-toggle" onclick="toggleFan()" disabled
-               class="px-5 py-2 rounded text-sm font-medium bg-neutral-200 text-neutral-500 cursor-not-allowed transition">
-               Loading...
-            </button>
+            <div class="flex items-center space-x-3">
+               <span id="fan-mode-badge" class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $tempControlActive ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
+                  {{ $tempControlActive ? 'Auto' : 'Manual' }}
+               </span>
+               <button id="fan-toggle" onclick="toggleFan()" disabled
+                  class="px-5 py-2 rounded text-sm font-medium bg-neutral-200 text-neutral-500 cursor-not-allowed transition">
+                  Loading...
+               </button>
+            </div>
          </div>
          <div id="speed-section" class="mt-4 pt-3 border-t border-neutral-100 hidden">
             <div class="flex items-center justify-between mb-1.5">
@@ -98,244 +100,204 @@
          </div>
       </div>
 
-      {{-- Voice Commands / Sinric Pro --}}
-      <div id="voice-commands" class="border border-neutral-200 rounded-lg p-5">
-         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-4">
+      {{-- ─── Temperature Control ─── --}}
+      <div class="border border-neutral-200 rounded-lg p-5">
+         <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold">Temperature Control</h3>
+            <div class="flex items-center space-x-2">
+               @if($tempControlActive && $activeProfile)
+                  <span class="w-2 h-2 rounded-full bg-black"></span>
+                  <span class="text-[10px] text-black font-medium">{{ $activeProfile->name }}</span>
+               @else
+                  <span class="w-2 h-2 rounded-full bg-neutral-300"></span>
+                  <span class="text-[10px] text-neutral-400">Manual Mode</span>
+               @endif
+            </div>
+         </div>
+
+         @if($tempControlActive && $activeProfile)
+            <div class="flex items-center justify-between p-3 bg-neutral-50 rounded mb-4">
+               <div>
+                  <p class="text-xs text-neutral-500">Active Profile</p>
+                  <p class="text-sm font-semibold mt-0.5">{{ $activeProfile->name }}</p>
+                  <div class="mt-1.5 flex flex-wrap gap-2">
+                     @foreach($activeProfile->rules->sortBy('temperature') as $rule)
+                        <span class="text-[10px] text-neutral-500 bg-white border border-neutral-200 rounded px-1.5 py-0.5">
+                           &ge;{{ $rule->temperature }}C &rarr; {{ $rule->fan_speed_percent }}%
+                        </span>
+                     @endforeach
+                  </div>
+               </div>
+               <form method="POST" action="{{ route('temperature-control.deactivate') }}">
+                  @csrf
+                  <button type="submit"
+                     class="px-3 py-1.5 border border-black text-black text-xs rounded hover:bg-neutral-50 transition">
+                     Deactivate
+                  </button>
+               </form>
+            </div>
+         @else
+            <p class="text-xs text-neutral-400 mb-4">No active profile. Create one and activate it for automatic fan control.</p>
+         @endif
+
+         @forelse($profiles as $profile)
+         <div class="py-3 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
+            <div class="flex items-center justify-between">
+               <div class="flex items-center space-x-2">
+                  <span class="text-xs font-medium">{{ $profile->name }}</span>
+                  @if($profile->is_active)
+                     <span class="text-[10px] font-medium border border-black text-black rounded px-1.5 py-0.5">Active</span>
+                  @endif
+                  <span class="text-[10px] text-neutral-400">{{ $profile->rules->count() }} rule{{ $profile->rules->count() !== 1 ? 's' : '' }}</span>
+               </div>
+               <div class="flex items-center space-x-2">
+                  @if(!$profile->is_active)
+                     <form method="POST" action="{{ route('temperature-control.activate', $profile) }}">
+                        @csrf
+                        <button type="submit" class="text-[10px] font-medium text-black hover:underline">Activate</button>
+                     </form>
+                  @endif
+                  <form method="POST" action="{{ route('temperature-control.destroy-profile', $profile) }}"
+                     onsubmit="return confirm('Delete this profile?')">
+                     @csrf
+                     @method('DELETE')
+                     <button type="submit" class="text-[10px] text-neutral-400 hover:text-black">Delete</button>
+                  </form>
+               </div>
+            </div>
+
+            @if($profile->rules->count() > 0)
+            <details class="mt-2">
+               <summary class="text-[10px] text-neutral-400 cursor-pointer hover:text-black">Show rules</summary>
+               <div class="mt-1.5 space-y-1">
+                  @foreach($profile->rules->sortBy('temperature') as $rule)
+                  <div class="flex items-center justify-between text-[11px] text-neutral-500 pl-3">
+                     <span>&ge; {{ $rule->temperature }}C &rarr; Fan {{ $rule->fan_speed_percent }}%</span>
+                     <form method="POST" action="{{ route('temperature-control.destroy-rule', [$profile, $rule]) }}" class="inline">
+                        @csrf @method('DELETE')
+                        <button type="submit" class="text-[10px] text-neutral-400 hover:text-black">Remove</button>
+                     </form>
+                  </div>
+                  @endforeach
+               </div>
+            </details>
+            @endif
+
+            <form method="POST" action="{{ route('temperature-control.store-rule', $profile) }}"
+               class="flex items-end gap-2 mt-2">
+               @csrf
+               <input type="number" name="temperature" step="0.1" required placeholder="Temp C"
+                  class="w-20 border border-neutral-300 rounded px-2 py-1 text-[11px] focus:border-black focus:ring-0 focus:outline-none">
+               <input type="number" name="fan_speed_percent" min="0" max="100" required placeholder="Speed %"
+                  class="w-20 border border-neutral-300 rounded px-2 py-1 text-[11px] focus:border-black focus:ring-0 focus:outline-none">
+               <button type="submit"
+                  class="px-2 py-1 bg-black text-white text-[10px] rounded hover:bg-neutral-800 transition">Add</button>
+            </form>
+         </div>
+         @empty
+         @endforelse
+
+         <form method="POST" action="{{ route('temperature-control.store-profile') }}"
+            class="flex items-end gap-2 mt-3 pt-3 border-t border-neutral-100">
+            @csrf
+            <input type="text" name="name" required placeholder="New profile name..."
+               class="flex-1 border border-neutral-300 rounded px-2 py-1.5 text-xs focus:border-black focus:ring-0 focus:outline-none">
+            <button type="submit"
+               class="px-3 py-1.5 bg-black text-white text-xs rounded hover:bg-neutral-800 transition whitespace-nowrap">
+               Create
+            </button>
+         </form>
+      </div>
+
+      {{-- ─── Voice Control ─── --}}
+      <div class="border border-neutral-200 rounded-lg p-5">
+         <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold">Voice Control</h3>
             <div class="flex items-center space-x-2">
-               <span
-                  class="inline-flex items-center text-[10px] font-medium border border-neutral-300 rounded px-2 py-0.5">Google
-                  Assistant</span>
-               <span
-                  class="inline-flex items-center text-[10px] font-medium border border-neutral-300 rounded px-2 py-0.5">Sinric
-                  Pro</span>
+               <div id="sinric-status-dot" class="w-2 h-2 rounded-full bg-neutral-300"></div>
+               <span id="sinric-status-text" class="text-[10px] text-neutral-400">Checking...</span>
             </div>
          </div>
 
-         {{-- Status --}}
-         <div class="flex items-center space-x-3 mb-4 p-3 bg-neutral-50 rounded">
-            <div id="sinric-status-dot" class="w-2 h-2 rounded-full bg-neutral-300"></div>
-            <span id="sinric-status-text" class="text-xs text-neutral-500">Checking Sinric Pro connection...</span>
-            <button onclick="checkSinricStatus()"
-               class="ml-auto text-[10px] underline text-neutral-400 hover:text-black">Refresh</button>
-         </div>
-
-         {{-- Speak Command --}}
-         <div class="mb-4 p-3 border border-neutral-200 rounded-lg">
-            <div class="flex items-center gap-3">
-               <button id="dash-mic-btn" onclick="toggleDashSpeech()"
-                  class="relative flex-shrink-0 w-10 h-10 rounded-full border-2 border-neutral-300 bg-white flex items-center justify-center transition-all duration-200 hover:border-black focus:outline-none"
-                  title="Click to speak a command">
-                  <div id="dash-mic-pulse"
-                     class="absolute inset-0 rounded-full bg-black animate-ping opacity-0 pointer-events-none"></div>
-                  <svg id="dash-mic-icon" class="w-5 h-5 text-neutral-400 relative z-10" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor" stroke-width="2">
-                     <path stroke-linecap="round" stroke-linejoin="round"
-                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                  </svg>
-               </button>
-               <div class="flex-1 min-w-0">
-                  <p id="dash-mic-status" class="text-xs text-neutral-500">Click the mic to speak a command</p>
-                  <p id="dash-mic-transcript" class="text-xs text-black font-medium truncate mt-0.5"></p>
-               </div>
-               <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
-                  <span class="text-[10px] text-neutral-400">Hands-free</span>
-                  <input type="checkbox" id="dash-handsfree" onchange="toggleDashHandsFree()" class="sr-only peer">
-                  <div
-                     class="w-7 h-4 bg-neutral-200 peer-checked:bg-black rounded-full relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-3 after:h-3 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-3">
-                  </div>
-               </label>
+         <div class="flex items-center gap-3 mb-4 p-3 bg-neutral-50 rounded-lg">
+            <button id="mic-btn" onclick="toggleSpeech()"
+               class="relative flex-shrink-0 w-10 h-10 rounded-full border-2 border-neutral-300 bg-white flex items-center justify-center transition-all duration-200 hover:border-black focus:outline-none"
+               title="Click to speak a command">
+               <div id="mic-pulse"
+                  class="absolute inset-0 rounded-full bg-black animate-ping opacity-0 pointer-events-none"></div>
+               <svg id="mic-icon" class="w-5 h-5 text-neutral-400 relative z-10" fill="none" viewBox="0 0 24 24"
+                  stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+               </svg>
+            </button>
+            <div class="flex-1 min-w-0">
+               <p id="mic-status" class="text-xs text-neutral-500">Click the mic to speak a command</p>
+               <p id="mic-transcript" class="text-xs text-black font-medium truncate mt-0.5"></p>
             </div>
-            <p id="dash-mic-unsupported" class="hidden text-[10px] text-neutral-400 mt-2">Your browser doesn't support
-               speech recognition. Try Chrome or Edge.</p>
+            <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
+               <span class="text-[10px] text-neutral-400">Hands-free</span>
+               <input type="checkbox" id="handsfree-toggle" onchange="toggleHandsFree()" class="sr-only peer">
+               <div
+                  class="w-7 h-4 bg-neutral-200 peer-checked:bg-black rounded-full relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-3 after:h-3 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-3">
+               </div>
+            </label>
          </div>
+         <p id="mic-unsupported" class="hidden text-[10px] text-neutral-400 mb-3">Your browser doesn't support speech recognition. Try Chrome or Edge.</p>
 
-         {{-- Sample Voice Commands --}}
-         <div class="mb-4">
-            <p class="text-xs text-neutral-500 mb-2">Try these voice commands with Google Assistant:</p>
-            <div class="space-y-1.5">
-               <div
-                  class="flex items-center justify-between p-2.5 border border-neutral-100 rounded group hover:border-neutral-300 transition cursor-pointer"
-                  onclick="executeVoiceCommand('turn_on', 'fan')">
-                  <div class="flex items-center space-x-2.5">
-                     <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                     </svg>
-                     <span class="text-xs">"Hey Gout, turn on the fan"</span>
-                  </div>
-                  <span
-                     class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
-                     to
-                     simulate</span>
-               </div>
-               <div
-                  class="flex items-center justify-between p-2.5 border border-neutral-100 rounded group hover:border-neutral-300 transition cursor-pointer"
-                  onclick="executeVoiceCommand('turn_off', 'fan')">
-                  <div class="flex items-center space-x-2.5">
-                     <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                     </svg>
-                     <span class="text-xs">"Hey Gout, turn off the fan"</span>
-                  </div>
-                  <span
-                     class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
-                     to
-                     simulate</span>
-               </div>
-               <div
-                  class="flex items-center justify-between p-2.5 border border-neutral-100 rounded group hover:border-neutral-300 transition cursor-pointer"
-                  onclick="executeVoiceCommand('set_speed', 'fan', 50)">
-                  <div class="flex items-center space-x-2.5">
-                     <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                     </svg>
-                     <span class="text-xs">"Hey Gout, set the fan to 50 percent"</span>
-                  </div>
-                  <span
-                     class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
-                     to
-                     simulate</span>
-               </div>
-               <div
-                  class="flex items-center justify-between p-2.5 border border-neutral-100 rounded group hover:border-neutral-300 transition cursor-pointer"
-                  onclick="executeVoiceCommand('get_temperature', 'sensor')">
-                  <div class="flex items-center space-x-2.5">
-                     <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                     </svg>
-                     <span class="text-xs">"Hey Gout, what's the temperature?"</span>
-                  </div>
-                  <span
-                     class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
-                     to
-                     simulate</span>
-               </div>
-               <div
-                  class="flex items-center justify-between p-2.5 border border-neutral-100 rounded group hover:border-neutral-300 transition cursor-pointer"
-                  onclick="executeVoiceCommand('get_humidity', 'sensor')">
-                  <div class="flex items-center space-x-2.5">
-                     <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                     </svg>
-                     <span class="text-xs">"Hey Gout, what's the humidity?"</span>
-                  </div>
-                  <span
-                     class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
-                     to
-                     simulate</span>
-               </div>
-               <div
-                  class="flex items-center justify-between p-2.5 border border-neutral-100 rounded group hover:border-neutral-300 transition cursor-pointer"
-                  onclick="executeVoiceCommand('toggle_all', 'devices')">
-                  <div class="flex items-center space-x-2.5">
-                     <svg class="w-3.5 h-3.5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round"
-                           d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-                     </svg>
-                     <span class="text-xs">"Hey Gout, turn off all devices"</span>
-                  </div>
-                  <span
-                     class="text-[10px] text-neutral-400 hidden sm:inline sm:opacity-0 sm:group-hover:opacity-100 transition">Click
-                     to
-                     simulate</span>
-               </div>
-            </div>
-         </div>
-
-         {{-- Command Log --}}
          <div>
             <div class="flex items-center justify-between mb-2">
                <p class="text-xs text-neutral-500">Command Log</p>
-               <button onclick="clearCommandLog()"
-                  class="text-[10px] underline text-neutral-400 hover:text-black">Clear</button>
+               <button onclick="clearCommandLog()" class="text-[10px] underline text-neutral-400 hover:text-black">Clear</button>
             </div>
             <div id="voice-command-log"
-               class="bg-neutral-50 rounded p-3 max-h-40 overflow-y-auto font-mono text-[11px] text-neutral-600 space-y-1">
+               class="bg-neutral-50 rounded p-3 max-h-32 overflow-y-auto font-mono text-[11px] text-neutral-600 space-y-1">
                <p class="text-neutral-400 italic">No commands executed yet.</p>
             </div>
          </div>
-
-         {{-- Sinric Pro Setup Info --}}
-         <details class="mt-4">
-            <summary class="text-xs text-neutral-500 cursor-pointer hover:text-black">Sinric Pro Setup Guide</summary>
-            <div class="mt-2 p-3 bg-neutral-50 rounded text-[11px] text-neutral-600 space-y-2">
-               <p><strong>1.</strong> Create a Sinric Pro account at <span class="font-mono">sinric.pro</span></p>
-               <p><strong>2.</strong> Add your ESP32 device with type <span class="font-mono">Fan</span> or <span
-                     class="font-mono">Temperature Sensor</span></p>
-               <p><strong>3.</strong> Copy your App Key and App Secret to your <span class="font-mono">.env</span> file:
-               </p>
-               <pre class="bg-white border border-neutral-200 rounded p-2 overflow-x-auto">SINRIC_APP_KEY=your-app-key
-SINRIC_APP_SECRET=your-app-secret
-SINRIC_DEVICE_ID=your-device-id</pre>
-               <p><strong>4.</strong> Link Sinric Pro to Google Home app under <strong>Works with Google</strong></p>
-               <p><strong>5.</strong> Upload the ESP32 code with the Sinric Pro library included</p>
-               <p class="border-t border-neutral-200 pt-2 mt-2"><strong>API Endpoint:</strong> <span
-                     class="font-mono">POST /api/sinric/callback</span> receives commands from Sinric Pro and forwards
-                  them to your ESP32 via this dashboard.</p>
-            </div>
-         </details>
       </div>
 
-      {{-- Device List --}}
+      {{-- ─── Devices ─── --}}
       <div class="border border-neutral-200 rounded-lg p-5">
          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold">Your Devices</h3>
-            <a href="{{ route('devices.create') }}" class="text-xs font-medium text-neutral-500 hover:text-black">+ Add
-               Device</a>
+            <h3 class="text-sm font-semibold">Devices</h3>
+            <a href="{{ route('devices.create') }}" class="text-xs font-medium text-neutral-500 hover:text-black">+ Add Device</a>
          </div>
          @forelse($devices as $device)
          <div class="flex items-center justify-between py-2.5 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
             <div class="flex items-center space-x-2.5">
-               <div class="w-1.5 h-1.5 rounded-full {{ $device->status === 'online' ? 'bg-black' : 'bg-neutral-300' }}">
-               </div>
+               <div class="w-1.5 h-1.5 rounded-full {{ $device->status === 'online' ? 'bg-black' : 'bg-neutral-300' }}"></div>
                <div>
-                  <a href="{{ route('devices.show', $device) }}"
-                     class="text-xs font-medium hover:underline">{{ $device->name }}</a>
-                  <p class="text-[10px] text-neutral-400">{{ $device->device_type }} &middot;
-                     {{ $device->device_identifier }}
-                  </p>
+                  <a href="{{ route('devices.show', $device) }}" class="text-xs font-medium hover:underline">{{ $device->name }}</a>
+                  <p class="text-[10px] text-neutral-400">{{ $device->device_type }} &middot; {{ $device->device_identifier }}</p>
                </div>
             </div>
-            <div class="text-right">
-               <span
-                  class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $device->status === 'online' ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
-                  {{ ucfirst($device->status) }}
-               </span>
-            </div>
+            <span class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $device->status === 'online' ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
+               {{ ucfirst($device->status) }}
+            </span>
          </div>
          @empty
          <div class="text-center py-6">
             <p class="text-xs text-neutral-400">No devices yet</p>
-            <a href="{{ route('devices.create') }}"
-               class="mt-2 inline-block text-xs underline text-neutral-500 hover:text-black">Register your first
-               device</a>
+            <a href="{{ route('devices.create') }}" class="mt-2 inline-block text-xs underline text-neutral-500 hover:text-black">Register your first device</a>
          </div>
          @endforelse
       </div>
    </div>
 
-   {{-- Right Column --}}
+   {{-- ═══ Right Column (1/3) ═══ --}}
    <div class="space-y-6">
 
-      {{-- Alerts --}}
-      <div id="alerts" class="border border-neutral-200 rounded-lg p-5">
-         <h3 class="text-sm font-semibold mb-3">Recent Alerts</h3>
+      {{-- ─── Alerts ─── --}}
+      <div class="border border-neutral-200 rounded-lg p-5">
+         <div class="flex items-center justify-between mb-3">
+            <h3 class="text-sm font-semibold">Recent Alerts</h3>
+            <a href="{{ route('alerts.index') }}" class="text-[10px] text-neutral-400 hover:text-black underline">View All</a>
+         </div>
          @forelse($unreadAlerts as $alert)
          <div class="flex items-start space-x-2.5 py-2 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
             <div class="mt-1">
-               <span
-                  class="flex h-1.5 w-1.5 rounded-full {{ $alert->severity === 'critical' ? 'bg-black' : 'bg-neutral-400' }}"></span>
+               <span class="flex h-1.5 w-1.5 rounded-full {{ $alert->severity === 'critical' ? 'bg-black' : 'bg-neutral-400' }}"></span>
             </div>
             <div class="flex-1 min-w-0">
                <p class="text-xs">{{ $alert->message }}</p>
@@ -349,10 +311,10 @@ SINRIC_DEVICE_ID=your-device-id</pre>
          @endforelse
       </div>
 
-      {{-- Recent Readings --}}
+      {{-- ─── Recent Readings ─── --}}
       <div class="border border-neutral-200 rounded-lg p-5">
          <h3 class="text-sm font-semibold mb-3">Recent Readings</h3>
-         @forelse($recentSensorData as $reading)
+         @forelse($recentSensorData->take(8) as $reading)
          <div class="flex items-center justify-between py-2 {{ !$loop->last ? 'border-b border-neutral-50' : '' }}">
             <div>
                <p class="text-xs font-medium">{{ ucfirst($reading->sensor_type) }}</p>
@@ -368,39 +330,35 @@ SINRIC_DEVICE_ID=your-device-id</pre>
          @endforelse
       </div>
 
-      {{-- Sinric Pro Quick Actions --}}
+      {{-- ─── Quick Actions ─── --}}
       <div class="border border-neutral-200 rounded-lg p-5">
          <h3 class="text-sm font-semibold mb-3">Quick Actions</h3>
          <div class="space-y-2">
             <button onclick="executeVoiceCommand('turn_on', 'fan')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Turn Fan On</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
             <button onclick="executeVoiceCommand('turn_off', 'fan')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Turn Fan Off</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
             <button onclick="executeVoiceCommand('get_temperature', 'sensor')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Get Temperature</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
             <button onclick="executeVoiceCommand('get_humidity', 'sensor')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Get Humidity</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
@@ -412,12 +370,19 @@ SINRIC_DEVICE_ID=your-device-id</pre>
 
 @push('scripts')
 <script>
+// ─── State ───
 let currentState = null;
 let currentSpeed = 255;
 let speedTimeout = null;
 let sensorChart = null;
+let recognition = null;
+let isListening = false;
+let isHandsFree = false;
+let speechSynth = window.speechSynthesis;
 
-// ─── Fan Control ───
+// ═══════════════════════════════════════
+// Fan Control
+// ═══════════════════════════════════════
 async function fetchFanStatus() {
    try {
       const res = await axios.get('/api/fan/status');
@@ -468,7 +433,9 @@ async function toggleFan() {
    }
 }
 
-// ─── Sensor Chart ───
+// ═══════════════════════════════════════
+// Sensor Chart
+// ═══════════════════════════════════════
 async function loadChartData() {
    const deviceId = document.getElementById('chart-device').value;
    const sensorType = document.getElementById('chart-sensor').value;
@@ -481,10 +448,7 @@ async function loadChartData() {
 
    try {
       const res = await axios.get(`/api/devices/${deviceId}/sensor-data/chart`, {
-         params: {
-            sensor_type: sensorType,
-            hours: hours
-         }
+         params: { sensor_type: sensorType, hours: hours }
       });
 
       const labels = res.data.labels;
@@ -519,40 +483,17 @@ async function loadChartData() {
          options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: {
-               legend: {
-                  display: false
-               }
-            },
+            plugins: { legend: { display: false } },
             scales: {
                x: {
-                  grid: {
-                     display: false
-                  },
-                  ticks: {
-                     maxTicksLimit: 12,
-                     font: {
-                        size: 10
-                     },
-                     color: '#a3a3a3'
-                  },
-                  border: {
-                     color: '#e5e5e5'
-                  },
+                  grid: { display: false },
+                  ticks: { maxTicksLimit: 12, font: { size: 10 }, color: '#a3a3a3' },
+                  border: { color: '#e5e5e5' },
                },
                y: {
-                  grid: {
-                     color: '#f5f5f5'
-                  },
-                  ticks: {
-                     font: {
-                        size: 10
-                     },
-                     color: '#a3a3a3'
-                  },
-                  border: {
-                     color: '#e5e5e5'
-                  },
+                  grid: { color: '#f5f5f5' },
+                  ticks: { font: { size: 10 }, color: '#a3a3a3' },
+                  border: { color: '#e5e5e5' },
                }
             }
          }
@@ -562,111 +503,106 @@ async function loadChartData() {
    }
 }
 
-// ─── Dashboard Speech Recognition ───
-let dashRecognition = null;
-let dashListening = false;
-let dashHandsFree = false;
-let dashSynth = window.speechSynthesis;
-
-function initDashSpeech() {
+// ═══════════════════════════════════════
+// Voice / Speech Recognition
+// ═══════════════════════════════════════
+function initSpeech() {
    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
    if (!SR) {
-      document.getElementById('dash-mic-unsupported').classList.remove('hidden');
-      document.getElementById('dash-mic-btn').disabled = true;
-      document.getElementById('dash-mic-btn').classList.add('opacity-40', 'cursor-not-allowed');
-      return;
+      document.getElementById('mic-unsupported').classList.remove('hidden');
+      document.getElementById('mic-btn').disabled = true;
+      document.getElementById('mic-btn').classList.add('opacity-40', 'cursor-not-allowed');
+      return false;
    }
-   dashRecognition = new SR();
-   dashRecognition.continuous = false;
-   dashRecognition.interimResults = true;
-   dashRecognition.lang = 'en-US';
 
-   dashRecognition.onstart = () => {
-      dashListening = true;
-      updateDashMicUI(true);
-      document.getElementById('dash-mic-status').textContent = 'Listening...';
-      document.getElementById('dash-mic-status').className = 'text-xs text-black font-medium';
+   recognition = new SR();
+   recognition.continuous = false;
+   recognition.interimResults = true;
+   recognition.lang = 'en-US';
+
+   recognition.onstart = () => {
+      isListening = true;
+      updateMicUI(true);
+      document.getElementById('mic-status').textContent = 'Listening...';
+      document.getElementById('mic-status').className = 'text-xs text-black font-medium';
    };
 
-   dashRecognition.onresult = (event) => {
-      let interim = '',
-         final = '';
+   recognition.onresult = (event) => {
+      let interim = '', final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
          const t = event.results[i][0].transcript;
          if (event.results[i].isFinal) final += t;
          else interim += t;
       }
-      document.getElementById('dash-mic-transcript').textContent = `"${final || interim}"`;
-      if (final) dashProcessVoice(final.trim().toLowerCase());
+      document.getElementById('mic-transcript').textContent = `"${final || interim}"`;
+      if (final) processVoice(final.trim().toLowerCase());
    };
 
-   dashRecognition.onerror = (event) => {
+   recognition.onerror = (event) => {
       if (event.error === 'no-speech') {
-         document.getElementById('dash-mic-status').textContent = 'No speech detected.';
+         document.getElementById('mic-status').textContent = 'No speech detected.';
       } else if (event.error === 'not-allowed') {
-         document.getElementById('dash-mic-status').textContent = 'Mic access denied.';
+         document.getElementById('mic-status').textContent = 'Mic access denied.';
+      } else if (event.error !== 'aborted') {
+         logCommand(`Speech error: ${event.error}`, 'error');
       }
-      dashListening = false;
-      updateDashMicUI(false);
+      isListening = false;
+      updateMicUI(false);
    };
 
-   dashRecognition.onend = () => {
-      dashListening = false;
-      updateDashMicUI(false);
-      if (dashHandsFree) {
+   recognition.onend = () => {
+      isListening = false;
+      updateMicUI(false);
+      if (isHandsFree) {
          setTimeout(() => {
-            if (dashHandsFree && !dashListening) {
-               try {
-                  dashRecognition.start();
-               } catch (e) {}
+            if (isHandsFree && !isListening) {
+               try { recognition.start(); } catch (e) {}
             }
          }, 500);
-         document.getElementById('dash-mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
+         document.getElementById('mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
       } else {
-         document.getElementById('dash-mic-status').textContent = 'Click the mic to speak a command';
-         document.getElementById('dash-mic-status').className = 'text-xs text-neutral-500';
+         document.getElementById('mic-status').textContent = 'Click the mic to speak a command';
+         document.getElementById('mic-status').className = 'text-xs text-neutral-500';
       }
    };
+
+   return true;
 }
 
-function toggleDashSpeech() {
-   if (!dashRecognition) return;
-   if (dashListening) {
-      dashRecognition.abort();
+function toggleSpeech() {
+   if (!recognition) return;
+   if (isListening) {
+      recognition.abort();
    } else {
-      document.getElementById('dash-mic-transcript').textContent = '';
-      try {
-         dashRecognition.start();
-      } catch (e) {}
+      document.getElementById('mic-transcript').textContent = '';
+      try { recognition.start(); } catch (e) {}
    }
 }
 
-function toggleDashHandsFree() {
-   dashHandsFree = document.getElementById('dash-handsfree').checked;
-   if (dashHandsFree) {
-      if (!dashRecognition) initDashSpeech();
-      dashRecognition.continuous = true;
-      document.getElementById('dash-mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
-      if (!dashListening) {
-         try {
-            dashRecognition.start();
-         } catch (e) {}
+function toggleHandsFree() {
+   isHandsFree = document.getElementById('handsfree-toggle').checked;
+   if (isHandsFree) {
+      if (!recognition && !initSpeech()) return;
+      recognition.continuous = true;
+      document.getElementById('mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
+      if (!isListening) {
+         try { recognition.start(); } catch (e) {}
       }
       logCommand('Hands-free mode enabled', 'info');
    } else {
-      if (dashRecognition) {
-         dashRecognition.continuous = false;
-         if (dashListening) dashRecognition.abort();
+      if (recognition) {
+         recognition.continuous = false;
+         if (isListening) recognition.abort();
       }
-      document.getElementById('dash-mic-status').textContent = 'Click the mic to speak a command';
+      document.getElementById('mic-status').textContent = 'Click the mic to speak a command';
       logCommand('Hands-free mode disabled', 'info');
    }
 }
 
-function updateDashMicUI(active) {
-   const btn = document.getElementById('dash-mic-btn');
-   const icon = document.getElementById('dash-mic-icon');
-   const pulse = document.getElementById('dash-mic-pulse');
+function updateMicUI(active) {
+   const btn = document.getElementById('mic-btn');
+   const icon = document.getElementById('mic-icon');
+   const pulse = document.getElementById('mic-pulse');
    if (active) {
       btn.classList.remove('border-neutral-300', 'bg-white');
       btn.classList.add('border-black', 'bg-black');
@@ -684,49 +620,47 @@ function updateDashMicUI(active) {
    }
 }
 
-function dashProcessVoice(text) {
+function processVoice(text) {
    const wakeWords = ['hey fan', 'hey fans', 'a fan', 'hey van', 'hey fam'];
    let cmd = text;
    for (const w of wakeWords) {
-      if (cmd.startsWith(w)) {
-         cmd = cmd.substring(w.length).trim();
-         break;
-      }
+      if (cmd.startsWith(w)) { cmd = cmd.substring(w.length).trim(); break; }
    }
    if (!cmd || cmd.length < 2) return;
 
    logCommand(`Voice: "${text}"`, 'info');
 
-   if (/turn\s*on.*fan|fan\s*on|start.*fan|enable.*fan/.test(cmd)) {
+   if (/turn\s*on.*fan|fan\s*on|start.*fan|enable.*fan|switch\s*on.*fan/.test(cmd)) {
       executeVoiceCommand('turn_on', 'fan');
-   } else if (/turn\s*off.*fan|fan\s*off|stop.*fan|disable.*fan|shut.*off/.test(cmd)) {
+   } else if (/turn\s*off.*fan|fan\s*off|stop.*fan|disable.*fan|switch\s*off.*fan|shut.*off/.test(cmd)) {
       executeVoiceCommand('turn_off', 'fan');
-   } else if (/set.*speed|speed.*to|fan.*(\d+)\s*percent/.test(cmd)) {
+   } else if (/set.*speed|speed.*to|fan.*(\d+)\s*percent|set.*fan.*(\d+)/.test(cmd)) {
       const m = cmd.match(/(\d+)/);
       executeVoiceCommand('set_speed', 'fan', m ? Math.min(parseInt(m[1]), 100) : 50);
-   } else if (/temperature|how hot|temp/.test(cmd)) {
+   } else if (/temperature|how hot|how warm|temp/.test(cmd)) {
       executeVoiceCommand('get_temperature', 'sensor');
-   } else if (/humidity|how humid/.test(cmd)) {
+   } else if (/humidity|how humid|moisture/.test(cmd)) {
       executeVoiceCommand('get_humidity', 'sensor');
-   } else if (/turn\s*on|start|enable/.test(cmd)) {
+   } else if (/toggle\s*all|all\s*devices|everything/.test(cmd)) {
+      executeVoiceCommand('toggle_all', 'all');
+   } else if (/turn\s*on|switch\s*on|start|enable/.test(cmd)) {
       executeVoiceCommand('turn_on', 'fan');
-   } else if (/turn\s*off|stop|disable|shut/.test(cmd)) {
+   } else if (/turn\s*off|switch\s*off|stop|disable|shut/.test(cmd)) {
       executeVoiceCommand('turn_off', 'fan');
    } else {
       logCommand(`Unrecognized: "${cmd}"`, 'error');
    }
 }
 
-// ─── Voice Commands / Sinric Pro ───
+// ═══════════════════════════════════════
+// Sinric / Command Execution
+// ═══════════════════════════════════════
 function logCommand(message, type = 'info') {
    const log = document.getElementById('voice-command-log');
    if (log.querySelector('.italic')) log.innerHTML = '';
 
    const time = new Date().toLocaleTimeString('en-US', {
-      hour12: false,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit'
+      hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
    });
    const prefix = type === 'success' ? '✓' : type === 'error' ? '✗' : '→';
    const el = document.createElement('p');
@@ -744,20 +678,18 @@ function clearCommandLog() {
 async function checkSinricStatus() {
    const dot = document.getElementById('sinric-status-dot');
    const text = document.getElementById('sinric-status-text');
-   text.textContent = 'Checking...';
-
    try {
       const res = await axios.get('/api/sinric/status');
       if (res.data.connected) {
          dot.className = 'w-2 h-2 rounded-full bg-black';
-         text.textContent = 'Sinric Pro connected — Device ID: ' + (res.data.device_id || 'N/A');
+         text.textContent = 'Connected — ' + (res.data.device_id || 'N/A');
       } else {
          dot.className = 'w-2 h-2 rounded-full bg-neutral-300';
-         text.textContent = 'Sinric Pro not configured. See setup guide below.';
+         text.textContent = 'Sinric not configured';
       }
    } catch (e) {
       dot.className = 'w-2 h-2 rounded-full bg-neutral-300';
-      text.textContent = 'Sinric Pro not configured. See setup guide below.';
+      text.textContent = 'Sinric not configured';
    }
 }
 
@@ -775,17 +707,11 @@ async function executeVoiceCommand(action, device, value = null) {
 
    try {
       const res = await axios.post('/api/sinric/command', {
-         action: action,
-         device: device,
-         value: value,
+         action: action, device: device, value: value,
       });
-
       if (res.data.success) {
          logCommand(res.data.message || `${description} — OK`, 'success');
-         // Refresh fan status if it was a fan command
-         if (device === 'fan') {
-            setTimeout(fetchFanStatus, 500);
-         }
+         if (device === 'fan') setTimeout(fetchFanStatus, 500);
       } else {
          logCommand(res.data.message || `Failed: ${description}`, 'error');
       }
@@ -795,8 +721,10 @@ async function executeVoiceCommand(action, device, value = null) {
    }
 }
 
-// ─── Init ───
-initDashSpeech();
+// ═══════════════════════════════════════
+// Init
+// ═══════════════════════════════════════
+initSpeech();
 fetchFanStatus();
 setInterval(fetchFanStatus, 3000);
 loadChartData();

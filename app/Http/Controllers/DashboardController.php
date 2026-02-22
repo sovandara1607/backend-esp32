@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Cache;
 class DashboardController extends Controller
 {
     /**
-     * Display the main dashboard.
+     * Display the unified dashboard.
      */
     public function index()
     {
@@ -34,11 +34,16 @@ class DashboardController extends Controller
             ->with('device')
             ->get();
 
-        // Fan status (kept for backward compatibility with ESP32)
+        // Fan status
         $fanStatus = [
             'status' => Cache::get('fan_state', 'off'),
             'speed' => (int) Cache::get('fan_speed', 255),
         ];
+
+        // Temperature control data
+        $profiles = $user->temperatureProfiles()->with('rules')->latest()->get();
+        $activeProfile = $profiles->firstWhere('is_active', true);
+        $tempControlActive = Cache::get('temp_control_active', false);
 
         return view('dashboard', compact(
             'devices',
@@ -49,6 +54,9 @@ class DashboardController extends Controller
             'unreadAlertCount',
             'recentSensorData',
             'fanStatus',
+            'profiles',
+            'activeProfile',
+            'tempControlActive',
         ));
     }
 }
