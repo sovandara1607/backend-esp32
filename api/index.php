@@ -12,6 +12,10 @@ ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
+// CRITICAL: Change working directory to the project root.
+// On Vercel, the cwd is /var/task/php, but Laravel expects it to be the project root.
+chdir(__DIR__ . '/..');
+
 // Ensure writable directories exist in /tmp
 $storageDirs = [
    '/tmp/storage/framework/views',
@@ -25,6 +29,11 @@ foreach ($storageDirs as $dir) {
    if (!is_dir($dir)) {
       mkdir($dir, 0755, true);
    }
+}
+
+// Symlink the config cache if it doesn't exist in /tmp
+if (!file_exists('/tmp/storage/framework/config.php') && file_exists(__DIR__ . '/../bootstrap/cache/config.php')) {
+   copy(__DIR__ . '/../bootstrap/cache/config.php', '/tmp/storage/framework/config.php');
 }
 
 // Copy compiled views from the app's storage to /tmp if they exist
@@ -65,6 +74,8 @@ if (($_SERVER['REQUEST_URI'] ?? '') === '/api/debug') {
       'public_index' => file_exists(__DIR__ . '/../public/index.php') ? 'EXISTS' : 'MISSING',
       'bootstrap_app' => file_exists(__DIR__ . '/../bootstrap/app.php') ? 'EXISTS' : 'MISSING',
       'composer_json' => file_exists(__DIR__ . '/../composer.json') ? 'EXISTS' : 'MISSING',
+      'config_dir' => is_dir(__DIR__ . '/../config') ? 'EXISTS' : 'MISSING',
+      'config_app' => file_exists(__DIR__ . '/../config/app.php') ? 'EXISTS' : 'MISSING',
       'tmp_storage' => is_dir('/tmp/storage') ? 'EXISTS' : 'MISSING',
       'cwd' => getcwd(),
       'script_dir' => __DIR__,
