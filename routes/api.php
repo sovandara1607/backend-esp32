@@ -27,6 +27,12 @@ Route::get('/fan/status', function () {
 
 Route::get('/fan/on', function () {
     Cache::forever('fan_state', 'on');
+    // Deactivate temperature control — user switched to manual
+    if (Cache::get('temp_control_active')) {
+        Cache::forget('temp_control_active');
+        Cache::forget('temp_control_profile_id');
+        \App\Models\TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
+    }
     $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
     if ($device) {
         $device->commands()->create([
@@ -41,6 +47,12 @@ Route::get('/fan/on', function () {
 
 Route::get('/fan/off', function () {
     Cache::forever('fan_state', 'off');
+    // Deactivate temperature control — user switched to manual
+    if (Cache::get('temp_control_active')) {
+        Cache::forget('temp_control_active');
+        Cache::forget('temp_control_profile_id');
+        \App\Models\TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
+    }
     $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
     if ($device) {
         $device->commands()->create([
@@ -56,6 +68,12 @@ Route::get('/fan/off', function () {
 Route::get('/fan/speed/{value}', function ($value) {
     $speed = max(0, min(255, (int) $value));
     Cache::forever('fan_speed', $speed);
+    // Deactivate temperature control — user switched to manual
+    if (Cache::get('temp_control_active')) {
+        Cache::forget('temp_control_active');
+        Cache::forget('temp_control_profile_id');
+        \App\Models\TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
+    }
     $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
     if ($device) {
         $device->commands()->create([

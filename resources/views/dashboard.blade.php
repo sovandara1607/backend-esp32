@@ -80,7 +80,8 @@
                </div>
             </div>
             <div class="flex items-center space-x-3">
-               <span id="fan-mode-badge" class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $tempControlActive ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
+               <span id="fan-mode-badge"
+                  class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $tempControlActive ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
                   {{ $tempControlActive ? 'Auto' : 'Manual' }}
                </span>
                <button id="fan-toggle" onclick="toggleFan()" disabled
@@ -106,38 +107,39 @@
             <h3 class="text-sm font-semibold">Temperature Control</h3>
             <div class="flex items-center space-x-2">
                @if($tempControlActive && $activeProfile)
-                  <span class="w-2 h-2 rounded-full bg-black"></span>
-                  <span class="text-[10px] text-black font-medium">{{ $activeProfile->name }}</span>
+               <span class="w-2 h-2 rounded-full bg-black"></span>
+               <span class="text-[10px] text-black font-medium">{{ $activeProfile->name }}</span>
                @else
-                  <span class="w-2 h-2 rounded-full bg-neutral-300"></span>
-                  <span class="text-[10px] text-neutral-400">Manual Mode</span>
+               <span class="w-2 h-2 rounded-full bg-neutral-300"></span>
+               <span class="text-[10px] text-neutral-400">Manual Mode</span>
                @endif
             </div>
          </div>
 
          @if($tempControlActive && $activeProfile)
-            <div class="flex items-center justify-between p-3 bg-neutral-50 rounded mb-4">
-               <div>
-                  <p class="text-xs text-neutral-500">Active Profile</p>
-                  <p class="text-sm font-semibold mt-0.5">{{ $activeProfile->name }}</p>
-                  <div class="mt-1.5 flex flex-wrap gap-2">
-                     @foreach($activeProfile->rules->sortBy('temperature') as $rule)
-                        <span class="text-[10px] text-neutral-500 bg-white border border-neutral-200 rounded px-1.5 py-0.5">
-                           &ge;{{ $rule->temperature }}C &rarr; {{ $rule->fan_speed_percent }}%
-                        </span>
-                     @endforeach
-                  </div>
+         <div class="flex items-center justify-between p-3 bg-neutral-50 rounded mb-4">
+            <div>
+               <p class="text-xs text-neutral-500">Active Profile</p>
+               <p class="text-sm font-semibold mt-0.5">{{ $activeProfile->name }}</p>
+               <div class="mt-1.5 flex flex-wrap gap-2">
+                  @foreach($activeProfile->rules->sortBy('temperature') as $rule)
+                  <span class="text-[10px] text-neutral-500 bg-white border border-neutral-200 rounded px-1.5 py-0.5">
+                     &ge;{{ $rule->temperature }}C &rarr; {{ $rule->fan_speed_percent }}%
+                  </span>
+                  @endforeach
                </div>
-               <form method="POST" action="{{ route('temperature-control.deactivate') }}">
-                  @csrf
-                  <button type="submit"
-                     class="px-3 py-1.5 border border-black text-black text-xs rounded hover:bg-neutral-50 transition">
-                     Deactivate
-                  </button>
-               </form>
             </div>
+            <form method="POST" action="{{ route('temperature-control.deactivate') }}">
+               @csrf
+               <button type="submit"
+                  class="px-3 py-1.5 border border-black text-black text-xs rounded hover:bg-neutral-50 transition">
+                  Deactivate
+               </button>
+            </form>
+         </div>
          @else
-            <p class="text-xs text-neutral-400 mb-4">No active profile. Create one and activate it for automatic fan control.</p>
+         <p class="text-xs text-neutral-400 mb-4">No active profile. Create one and activate it for automatic fan
+            control.</p>
          @endif
 
          @forelse($profiles as $profile)
@@ -146,16 +148,18 @@
                <div class="flex items-center space-x-2">
                   <span class="text-xs font-medium">{{ $profile->name }}</span>
                   @if($profile->is_active)
-                     <span class="text-[10px] font-medium border border-black text-black rounded px-1.5 py-0.5">Active</span>
+                  <span
+                     class="text-[10px] font-medium border border-black text-black rounded px-1.5 py-0.5">Active</span>
                   @endif
-                  <span class="text-[10px] text-neutral-400">{{ $profile->rules->count() }} rule{{ $profile->rules->count() !== 1 ? 's' : '' }}</span>
+                  <span class="text-[10px] text-neutral-400">{{ $profile->rules->count() }}
+                     rule{{ $profile->rules->count() !== 1 ? 's' : '' }}</span>
                </div>
                <div class="flex items-center space-x-2">
                   @if(!$profile->is_active)
-                     <form method="POST" action="{{ route('temperature-control.activate', $profile) }}">
-                        @csrf
-                        <button type="submit" class="text-[10px] font-medium text-black hover:underline">Activate</button>
-                     </form>
+                  <form method="POST" action="{{ route('temperature-control.activate', $profile) }}">
+                     @csrf
+                     <button type="submit" class="text-[10px] font-medium text-black hover:underline">Activate</button>
+                  </form>
                   @endif
                   <form method="POST" action="{{ route('temperature-control.destroy-profile', $profile) }}"
                      onsubmit="return confirm('Delete this profile?')">
@@ -173,7 +177,8 @@
                   @foreach($profile->rules->sortBy('temperature') as $rule)
                   <div class="flex items-center justify-between text-[11px] text-neutral-500 pl-3">
                      <span>&ge; {{ $rule->temperature }}C &rarr; Fan {{ $rule->fan_speed_percent }}%</span>
-                     <form method="POST" action="{{ route('temperature-control.destroy-rule', [$profile, $rule]) }}" class="inline">
+                     <form method="POST" action="{{ route('temperature-control.destroy-rule', [$profile, $rule]) }}"
+                        class="inline">
                         @csrf @method('DELETE')
                         <button type="submit" class="text-[10px] text-neutral-400 hover:text-black">Remove</button>
                      </form>
@@ -243,12 +248,14 @@
                </div>
             </label>
          </div>
-         <p id="mic-unsupported" class="hidden text-[10px] text-neutral-400 mb-3">Your browser doesn't support speech recognition. Try Chrome or Edge.</p>
+         <p id="mic-unsupported" class="hidden text-[10px] text-neutral-400 mb-3">Your browser doesn't support speech
+            recognition. Try Chrome or Edge.</p>
 
          <div>
             <div class="flex items-center justify-between mb-2">
                <p class="text-xs text-neutral-500">Command Log</p>
-               <button onclick="clearCommandLog()" class="text-[10px] underline text-neutral-400 hover:text-black">Clear</button>
+               <button onclick="clearCommandLog()"
+                  class="text-[10px] underline text-neutral-400 hover:text-black">Clear</button>
             </div>
             <div id="voice-command-log"
                class="bg-neutral-50 rounded p-3 max-h-32 overflow-y-auto font-mono text-[11px] text-neutral-600 space-y-1">
@@ -257,29 +264,113 @@
          </div>
       </div>
 
+
       {{-- ─── Devices ─── --}}
+
+      {{-- Temperature Control --}}
+      <div class="border border-neutral-200 rounded-lg p-5">
+         <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold">Temperature Control</h3>
+            <div class="flex items-center space-x-2">
+               @if($tempControlActive && $activeProfile)
+               <span class="w-2 h-2 rounded-full bg-black"></span>
+               <span class="text-[10px] text-black font-medium">{{ $activeProfile->name }}</span>
+               @else
+               <span class="w-2 h-2 rounded-full bg-neutral-300"></span>
+               <span class="text-[10px] text-neutral-400">Manual Mode</span>
+               @endif
+            </div>
+         </div>
+
+         @if($tempControlActive && $activeProfile)
+         <div class="space-y-3">
+            <div class="p-3 bg-neutral-50 rounded">
+               <p class="text-xs text-neutral-500 mb-2">Active Profile: <span
+                     class="font-semibold text-black">{{ $activeProfile->name }}</span></p>
+               <div class="space-y-1">
+                  @foreach($activeProfile->rules->sortBy('temperature') as $rule)
+                  <p class="text-[11px] text-neutral-500 font-mono">>= {{ $rule->temperature }}C &rarr; Fan
+                     {{ $rule->fan_speed_percent }}%</p>
+                  @endforeach
+               </div>
+            </div>
+            <form method="POST" action="{{ route('temperature-control.deactivate') }}">
+               @csrf
+               <button type="submit"
+                  class="w-full px-4 py-2 border border-black text-black text-xs rounded hover:bg-neutral-50 transition">
+                  Deactivate &mdash; Switch to Manual
+               </button>
+            </form>
+         </div>
+         @else
+         @if($temperatureProfiles->count() > 0)
+         <div class="space-y-2">
+            @foreach($temperatureProfiles as $profile)
+            <div
+               class="flex items-center justify-between p-2.5 border border-neutral-100 rounded hover:border-neutral-300 transition">
+               <div>
+                  <p class="text-xs font-medium">{{ $profile->name }}</p>
+                  <p class="text-[10px] text-neutral-400">{{ $profile->rules->count() }}
+                     rule{{ $profile->rules->count() !== 1 ? 's' : '' }}</p>
+               </div>
+               @if($profile->rules->count() > 0)
+               <form method="POST" action="{{ route('temperature-control.activate', $profile) }}">
+                  @csrf
+                  <button type="submit"
+                     class="px-3 py-1 bg-black text-white text-xs rounded hover:bg-neutral-800 transition">
+                     Activate
+                  </button>
+               </form>
+               @else
+               <span class="text-[10px] text-neutral-400">No rules</span>
+               @endif
+            </div>
+            @endforeach
+         </div>
+         @else
+         <p class="text-xs text-neutral-400 text-center py-3">No temperature profiles yet.</p>
+         @endif
+         @endif
+
+         <div class="mt-3 pt-3 border-t border-neutral-100">
+            <a href="{{ route('temperature-control') }}"
+               class="text-xs text-neutral-500 hover:text-black underline underline-offset-2">
+               Manage profiles &amp; rules &rarr;
+            </a>
+         </div>
+      </div>
+
+      {{-- Device List --}}
+      add_temperature_control
       <div class="border border-neutral-200 rounded-lg p-5">
          <div class="flex items-center justify-between mb-4">
             <h3 class="text-sm font-semibold">Devices</h3>
-            <a href="{{ route('devices.create') }}" class="text-xs font-medium text-neutral-500 hover:text-black">+ Add Device</a>
+            <a href="{{ route('devices.create') }}" class="text-xs font-medium text-neutral-500 hover:text-black">+ Add
+               Device</a>
          </div>
          @forelse($devices as $device)
          <div class="flex items-center justify-between py-2.5 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
             <div class="flex items-center space-x-2.5">
-               <div class="w-1.5 h-1.5 rounded-full {{ $device->status === 'online' ? 'bg-black' : 'bg-neutral-300' }}"></div>
+               <div class="w-1.5 h-1.5 rounded-full {{ $device->status === 'online' ? 'bg-black' : 'bg-neutral-300' }}">
+               </div>
                <div>
-                  <a href="{{ route('devices.show', $device) }}" class="text-xs font-medium hover:underline">{{ $device->name }}</a>
-                  <p class="text-[10px] text-neutral-400">{{ $device->device_type }} &middot; {{ $device->device_identifier }}</p>
+                  <a href="{{ route('devices.show', $device) }}"
+                     class="text-xs font-medium hover:underline">{{ $device->name }}</a>
+                  <p class="text-[10px] text-neutral-400">{{ $device->device_type }} &middot;
+                     {{ $device->device_identifier }}</p>
                </div>
             </div>
-            <span class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $device->status === 'online' ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
+            <span
+               class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $device->status === 'online' ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
                {{ ucfirst($device->status) }}
             </span>
          </div>
          @empty
          <div class="text-center py-6">
             <p class="text-xs text-neutral-400">No devices yet</p>
-            <a href="{{ route('devices.create') }}" class="mt-2 inline-block text-xs underline text-neutral-500 hover:text-black">Register your first device</a>
+            <a href="{{ route('devices.create') }}"
+               class="mt-2 inline-block text-xs underline text-neutral-500 hover:text-black">Register your first
+               device</a>
          </div>
          @endforelse
       </div>
@@ -292,12 +383,14 @@
       <div class="border border-neutral-200 rounded-lg p-5">
          <div class="flex items-center justify-between mb-3">
             <h3 class="text-sm font-semibold">Recent Alerts</h3>
-            <a href="{{ route('alerts.index') }}" class="text-[10px] text-neutral-400 hover:text-black underline">View All</a>
+            <a href="{{ route('alerts.index') }}" class="text-[10px] text-neutral-400 hover:text-black underline">View
+               All</a>
          </div>
          @forelse($unreadAlerts as $alert)
          <div class="flex items-start space-x-2.5 py-2 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
             <div class="mt-1">
-               <span class="flex h-1.5 w-1.5 rounded-full {{ $alert->severity === 'critical' ? 'bg-black' : 'bg-neutral-400' }}"></span>
+               <span
+                  class="flex h-1.5 w-1.5 rounded-full {{ $alert->severity === 'critical' ? 'bg-black' : 'bg-neutral-400' }}"></span>
             </div>
             <div class="flex-1 min-w-0">
                <p class="text-xs">{{ $alert->message }}</p>
@@ -337,28 +430,32 @@
             <button onclick="executeVoiceCommand('turn_on', 'fan')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Turn Fan On</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
             <button onclick="executeVoiceCommand('turn_off', 'fan')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Turn Fan Off</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
             <button onclick="executeVoiceCommand('get_temperature', 'sensor')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Get Temperature</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
             <button onclick="executeVoiceCommand('get_humidity', 'sensor')"
                class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
                <span>Get Humidity</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                </svg>
             </button>
@@ -448,7 +545,10 @@ async function loadChartData() {
 
    try {
       const res = await axios.get(`/api/devices/${deviceId}/sensor-data/chart`, {
-         params: { sensor_type: sensorType, hours: hours }
+         params: {
+            sensor_type: sensorType,
+            hours: hours
+         }
       });
 
       const labels = res.data.labels;
@@ -483,17 +583,40 @@ async function loadChartData() {
          options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
+            plugins: {
+               legend: {
+                  display: false
+               }
+            },
             scales: {
                x: {
-                  grid: { display: false },
-                  ticks: { maxTicksLimit: 12, font: { size: 10 }, color: '#a3a3a3' },
-                  border: { color: '#e5e5e5' },
+                  grid: {
+                     display: false
+                  },
+                  ticks: {
+                     maxTicksLimit: 12,
+                     font: {
+                        size: 10
+                     },
+                     color: '#a3a3a3'
+                  },
+                  border: {
+                     color: '#e5e5e5'
+                  },
                },
                y: {
-                  grid: { color: '#f5f5f5' },
-                  ticks: { font: { size: 10 }, color: '#a3a3a3' },
-                  border: { color: '#e5e5e5' },
+                  grid: {
+                     color: '#f5f5f5'
+                  },
+                  ticks: {
+                     font: {
+                        size: 10
+                     },
+                     color: '#a3a3a3'
+                  },
+                  border: {
+                     color: '#e5e5e5'
+                  },
                }
             }
          }
@@ -528,7 +651,8 @@ function initSpeech() {
    };
 
    recognition.onresult = (event) => {
-      let interim = '', final = '';
+      let interim = '',
+         final = '';
       for (let i = event.resultIndex; i < event.results.length; i++) {
          const t = event.results[i][0].transcript;
          if (event.results[i].isFinal) final += t;
@@ -556,7 +680,9 @@ function initSpeech() {
       if (isHandsFree) {
          setTimeout(() => {
             if (isHandsFree && !isListening) {
-               try { recognition.start(); } catch (e) {}
+               try {
+                  recognition.start();
+               } catch (e) {}
             }
          }, 500);
          document.getElementById('mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
@@ -575,7 +701,9 @@ function toggleSpeech() {
       recognition.abort();
    } else {
       document.getElementById('mic-transcript').textContent = '';
-      try { recognition.start(); } catch (e) {}
+      try {
+         recognition.start();
+      } catch (e) {}
    }
 }
 
@@ -586,7 +714,9 @@ function toggleHandsFree() {
       recognition.continuous = true;
       document.getElementById('mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
       if (!isListening) {
-         try { recognition.start(); } catch (e) {}
+         try {
+            recognition.start();
+         } catch (e) {}
       }
       logCommand('Hands-free mode enabled', 'info');
    } else {
@@ -624,7 +754,10 @@ function processVoice(text) {
    const wakeWords = ['hey fan', 'hey fans', 'a fan', 'hey van', 'hey fam'];
    let cmd = text;
    for (const w of wakeWords) {
-      if (cmd.startsWith(w)) { cmd = cmd.substring(w.length).trim(); break; }
+      if (cmd.startsWith(w)) {
+         cmd = cmd.substring(w.length).trim();
+         break;
+      }
    }
    if (!cmd || cmd.length < 2) return;
 
@@ -660,7 +793,10 @@ function logCommand(message, type = 'info') {
    if (log.querySelector('.italic')) log.innerHTML = '';
 
    const time = new Date().toLocaleTimeString('en-US', {
-      hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit'
+      hour12: false,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
    });
    const prefix = type === 'success' ? '✓' : type === 'error' ? '✗' : '→';
    const el = document.createElement('p');
@@ -707,7 +843,9 @@ async function executeVoiceCommand(action, device, value = null) {
 
    try {
       const res = await axios.post('/api/sinric/command', {
-         action: action, device: device, value: value,
+         action: action,
+         device: device,
+         value: value,
       });
       if (res.data.success) {
          logCommand(res.data.message || `${description} — OK`, 'success');
