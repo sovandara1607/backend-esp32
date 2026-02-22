@@ -7,13 +7,12 @@
  * so we redirect Laravel's storage paths there.
  */
 
-// Show errors during initial setup (remove after confirming it works)
+// Show errors during initial setup
 ini_set('display_errors', '1');
 ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 // CRITICAL: Change working directory to the project root.
-// On Vercel, the cwd is /var/task/php, but Laravel expects it to be the project root.
 chdir(__DIR__ . '/..');
 
 // Ensure writable directories exist in /tmp
@@ -23,6 +22,7 @@ $storageDirs = [
    '/tmp/storage/framework/sessions',
    '/tmp/storage/logs',
    '/tmp/storage/app/public',
+   '/tmp/bootstrap/cache',
 ];
 
 foreach ($storageDirs as $dir) {
@@ -31,9 +31,14 @@ foreach ($storageDirs as $dir) {
    }
 }
 
-// Symlink the config cache if it doesn't exist in /tmp
-if (!file_exists('/tmp/storage/framework/config.php') && file_exists(__DIR__ . '/../bootstrap/cache/config.php')) {
-   copy(__DIR__ . '/../bootstrap/cache/config.php', '/tmp/storage/framework/config.php');
+// Copy cached config/services/packages to writable location
+$cacheFiles = ['services.php', 'packages.php'];
+foreach ($cacheFiles as $file) {
+   $source = __DIR__ . '/../bootstrap/cache/' . $file;
+   $dest = '/tmp/bootstrap/cache/' . $file;
+   if (file_exists($source) && !file_exists($dest)) {
+      copy($source, $dest);
+   }
 }
 
 // Copy compiled views from the app's storage to /tmp if they exist
@@ -44,20 +49,28 @@ if (is_dir($sourceViews)) {
    }
 }
 
-// Point Laravel to the writable /tmp storage
-$_ENV['APP_STORAGE'] = '/tmp/storage';
-putenv('APP_STORAGE=/tmp/storage');
+// Set environment variables BEFORE Laravel bootstraps
+$envOverrides = [
+   'APP_STORAGE' => '/tmp/storage',
+   'APP_SERVICES_CACHE' => '/tmp/bootstrap/cache/services.php',
+   'APP_PACKAGES_CACHE' => '/tmp/bootstrap/cache/packages.php',
+   'APP_CONFIG_CACHE' => '/tmp/bootstrap/cache/config.php',
+   'APP_ROUTES_CACHE' => '/tmp/bootstrap/cache/routes.php',
+   'APP_EVENTS_CACHE' => '/tmp/bootstrap/cache/events.php',
+   'LOG_CHANNEL' => 'stderr',
+   'SESSION_DRIVER' => 'cookie',
+   'CACHE_STORE' => 'array',
+   'VIEW_COMPILED_PATH' => '/tmp/storage/framework/views',
+];
 
-// Override config to work on Vercel (stateless environment)
-$_ENV['LOG_CHANNEL'] = $_ENV['LOG_CHANNEL'] ?? 'stderr';
-$_ENV['SESSION_DRIVER'] = $_ENV['SESSION_DRIVER'] ?? 'cookie';
-$_ENV['CACHE_STORE'] = $_ENV['CACHE_STORE'] ?? 'array';
-$_ENV['VIEW_COMPILED_PATH'] = '/tmp/storage/framework/views';
-
-putenv('LOG_CHANNEL=' . ($_ENV['LOG_CHANNEL'] ?? 'stderr'));
-putenv('SESSION_DRIVER=' . ($_ENV['SESSION_DRIVER'] ?? 'cookie'));
-putenv('CACHE_STORE=' . ($_ENV['CACHE_STORE'] ?? 'array'));
-putenv('VIEW_COMPILED_PATH=/tmp/storage/framework/views');
+foreach ($envOverrides as $key => $value) {
+   // Don't override if already set via Vercel env vars (except paths)
+   if (!isset($_ENV[$key]) || str_starts_with($key, 'APP_') || $key === 'VIEW_COMPILED_PATH') {
+      $_ENV[$key] = $value;
+      $_SERVER[$key] = $value;
+      putenv("$key=$value");
+   }
+}
 
 // Debug endpoint — visit /api/debug to see what's going on
 if (($_SERVER['REQUEST_URI'] ?? '') === '/api/debug') {
@@ -73,9 +86,9 @@ if (($_SERVER['REQUEST_URI'] ?? '') === '/api/debug') {
       'vendor_autoload' => file_exists(__DIR__ . '/../vendor/autoload.php') ? 'EXISTS' : 'MISSING',
       'public_index' => file_exists(__DIR__ . '/../public/index.php') ? 'EXISTS' : 'MISSING',
       'bootstrap_app' => file_exists(__DIR__ . '/../bootstrap/app.php') ? 'EXISTS' : 'MISSING',
-      'composer_json' => file_exists(__DIR__ . '/../composer.json') ? 'EXISTS' : 'MISSING',
       'config_dir' => is_dir(__DIR__ . '/../config') ? 'EXISTS' : 'MISSING',
-      'config_app' => file_exists(__DIR__ . '/../config/app.php') ? 'EXISTS' : 'MISSING',
+      'services_cache' => file_exists('/tmp/bootstrap/cache/services.php') ? 'EXISTS' : 'MISSING',
+      'packages_cache' => file_exists('/tmp/bootstrap/cache/packages.php') ? 'EXISTS' : 'MISSING',
       'tmp_storage' => is_dir('/tmp/storage') ? 'EXISTS' : 'MISSING',
       'cwd' => getcwd(),
       'script_dir' => __DIR__,
@@ -87,11 +100,19 @@ if (($_SERVER['REQUEST_URI'] ?? '') === '/api/debug') {
 try {
    require __DIR__ . '/../public/index.php';
 } catch (\Throwable $e) {
+   // Walk up to find the original root cause
+   $root = $e;
+   while ($root->getPrevious()) {
+      $root = $root->getPrevious();
+   }
+
    header('Content-Type: application/json', true, 500);
    echo json_encode([
-      'error' => $e->getMessage(),
-      'file' => $e->getFile(),
-      'line' => $e->getLine(),
-      'trace' => array_slice(explode("\n", $e->getTraceAsString()), 0, 15),
+      'error' => $root->getMessage(),
+      'class' => get_class($root),
+      'file' => $root->getFile(),
+      'line' => $root->getLine(),
+      'trace' => array_slice(explode("\n", $root->getTraceAsString()), 0, 10),
+      'outer_error' => ($root !== $e) ? $e->getMessage() : null,
    ], JSON_PRETTY_PRINT);
 }
