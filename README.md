@@ -1,4 +1,4 @@
-# IoT Fan Monitoring & Control System — Backend
+# IoT Fan Monitoring & Control System 
 
 A web-based dashboard and API backend for monitoring and controlling ESP32-connected fans and sensors. Built with Laravel 12, Tailwind CSS 4, and Chart.js.
 
