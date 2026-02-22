@@ -82,6 +82,16 @@
                <span>Voice Control</span>
             </a>
 
+            <a href="{{ route('temperature-control') }}"
+               class="flex items-center space-x-3 px-3 py-2 rounded text-sm transition
+                  {{ request()->routeIs('temperature-control') ? 'bg-white text-black font-semibold' : 'text-neutral-400 hover:bg-neutral-900 hover:text-white' }}">
+               <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M12 3v13.5M12 3a2.5 2.5 0 00-2.5 2.5v8.036a4 4 0 104.999 0V5.5A2.5 2.5 0 0012 3z" />
+               </svg>
+               <span>Temp Control</span>
+            </a>
+
          </nav>
 
          {{-- User --}}

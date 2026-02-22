@@ -6,8 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Device;
 use App\Models\SensorData;
 use App\Models\Alert;
+use App\Models\TemperatureProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Cache;
 
 class SensorDataController extends Controller
 {
@@ -45,6 +47,11 @@ class SensorDataController extends Controller
 
          // Check alert thresholds
          $this->checkAlerts($device, $reading['sensor_type'], $reading['value']);
+
+         // Apply temperature-based fan control if active
+         if ($reading['sensor_type'] === 'temperature') {
+            $this->applyTemperatureControl($reading['value']);
+         }
       }
 
       return response()->json([
@@ -153,6 +160,42 @@ class SensorDataController extends Controller
                'triggered_at' => now(),
             ]);
          }
+      }
+   }
+
+   /**
+    * If temperature control is active, evaluate the active profile's rules
+    * and update fan speed in Cache accordingly.
+    */
+   private function applyTemperatureControl(float $currentTemp): void
+   {
+      if (!Cache::get('temp_control_active', false)) {
+         return;
+      }
+
+      $profileId = Cache::get('temp_control_profile_id');
+      if (!$profileId) {
+         return;
+      }
+
+      $profile = TemperatureProfile::with('rules')->find($profileId);
+      if (!$profile || !$profile->is_active) {
+         Cache::forget('temp_control_active');
+         Cache::forget('temp_control_profile_id');
+         return;
+      }
+
+      $speedPercent = $profile->evaluateSpeed($currentTemp);
+
+      if ($speedPercent === -1) {
+         // Below all rules: turn fan off
+         Cache::forever('fan_state', 'off');
+         Cache::forever('fan_speed', 0);
+      } else {
+         // Convert percent to 0-255 PWM value
+         $pwmSpeed = (int) round($speedPercent * 255 / 100);
+         Cache::forever('fan_state', 'on');
+         Cache::forever('fan_speed', $pwmSpeed);
       }
    }
 }

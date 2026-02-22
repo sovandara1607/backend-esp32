@@ -45,4 +45,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(DeviceCommand::class);
     }
+
+    public function temperatureProfiles(): HasMany
+    {
+        return $this->hasMany(TemperatureProfile::class);
+    }
 }
