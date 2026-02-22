@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Device;
 use App\Models\SensorData;
 use App\Models\Alert;
+use App\Models\TemperatureProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
@@ -40,6 +41,15 @@ class DashboardController extends Controller
             'speed' => (int) Cache::get('fan_speed', 255),
         ];
 
+        // Temperature control status
+        $tempControlActive = Cache::get('temp_control_active', false);
+        $activeProfile = null;
+        if ($tempControlActive) {
+            $profileId = Cache::get('temp_control_profile_id');
+            $activeProfile = $profileId ? TemperatureProfile::with('rules')->find($profileId) : null;
+        }
+        $temperatureProfiles = $user->temperatureProfiles()->with('rules')->latest()->get();
+
         return view('dashboard', compact(
             'devices',
             'totalDevices',
@@ -49,6 +59,9 @@ class DashboardController extends Controller
             'unreadAlertCount',
             'recentSensorData',
             'fanStatus',
+            'tempControlActive',
+            'activeProfile',
+            'temperatureProfiles',
         ));
     }
 }

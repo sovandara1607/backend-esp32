@@ -287,6 +287,75 @@ SINRIC_DEVICE_ID=your-device-id</pre>
          </details>
       </div>
 
+      {{-- Temperature Control --}}
+      <div class="border border-neutral-200 rounded-lg p-5">
+         <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold">Temperature Control</h3>
+            <div class="flex items-center space-x-2">
+               @if($tempControlActive && $activeProfile)
+                  <span class="w-2 h-2 rounded-full bg-black"></span>
+                  <span class="text-[10px] text-black font-medium">{{ $activeProfile->name }}</span>
+               @else
+                  <span class="w-2 h-2 rounded-full bg-neutral-300"></span>
+                  <span class="text-[10px] text-neutral-400">Manual Mode</span>
+               @endif
+            </div>
+         </div>
+
+         @if($tempControlActive && $activeProfile)
+            <div class="space-y-3">
+               <div class="p-3 bg-neutral-50 rounded">
+                  <p class="text-xs text-neutral-500 mb-2">Active Profile: <span class="font-semibold text-black">{{ $activeProfile->name }}</span></p>
+                  <div class="space-y-1">
+                     @foreach($activeProfile->rules->sortBy('temperature') as $rule)
+                        <p class="text-[11px] text-neutral-500 font-mono">>= {{ $rule->temperature }}C &rarr; Fan {{ $rule->fan_speed_percent }}%</p>
+                     @endforeach
+                  </div>
+               </div>
+               <form method="POST" action="{{ route('temperature-control.deactivate') }}">
+                  @csrf
+                  <button type="submit"
+                     class="w-full px-4 py-2 border border-black text-black text-xs rounded hover:bg-neutral-50 transition">
+                     Deactivate &mdash; Switch to Manual
+                  </button>
+               </form>
+            </div>
+         @else
+            @if($temperatureProfiles->count() > 0)
+               <div class="space-y-2">
+                  @foreach($temperatureProfiles as $profile)
+                     <div class="flex items-center justify-between p-2.5 border border-neutral-100 rounded hover:border-neutral-300 transition">
+                        <div>
+                           <p class="text-xs font-medium">{{ $profile->name }}</p>
+                           <p class="text-[10px] text-neutral-400">{{ $profile->rules->count() }} rule{{ $profile->rules->count() !== 1 ? 's' : '' }}</p>
+                        </div>
+                        @if($profile->rules->count() > 0)
+                           <form method="POST" action="{{ route('temperature-control.activate', $profile) }}">
+                              @csrf
+                              <button type="submit"
+                                 class="px-3 py-1 bg-black text-white text-xs rounded hover:bg-neutral-800 transition">
+                                 Activate
+                              </button>
+                           </form>
+                        @else
+                           <span class="text-[10px] text-neutral-400">No rules</span>
+                        @endif
+                     </div>
+                  @endforeach
+               </div>
+            @else
+               <p class="text-xs text-neutral-400 text-center py-3">No temperature profiles yet.</p>
+            @endif
+         @endif
+
+         <div class="mt-3 pt-3 border-t border-neutral-100">
+            <a href="{{ route('temperature-control') }}"
+               class="text-xs text-neutral-500 hover:text-black underline underline-offset-2">
+               Manage profiles &amp; rules &rarr;
+            </a>
+         </div>
+      </div>
+
       {{-- Device List --}}
       <div class="border border-neutral-200 rounded-lg p-5">
          <div class="flex items-center justify-between mb-4">

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Device;
+use App\Models\TemperatureProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
@@ -127,9 +128,19 @@ class SinricController extends Controller
 
    // ─── Private helpers ──────────────────────────
 
+   private function deactivateTempControl(): void
+   {
+      if (Cache::get('temp_control_active')) {
+         Cache::forget('temp_control_active');
+         Cache::forget('temp_control_profile_id');
+         TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
+      }
+   }
+
    private function turnOn(string $device): array
    {
       Cache::forever('fan_state', 'on');
+      $this->deactivateTempControl();
 
       return [
          'success' => true,
@@ -141,6 +152,7 @@ class SinricController extends Controller
    private function turnOff(string $device): array
    {
       Cache::forever('fan_state', 'off');
+      $this->deactivateTempControl();
 
       return [
          'success' => true,
@@ -153,6 +165,7 @@ class SinricController extends Controller
    {
       $speed = max(0, min(255, (int) round($value * 255 / 100)));
       Cache::forever('fan_speed', $speed);
+      $this->deactivateTempControl();
 
       return [
          'success' => true,
@@ -194,6 +207,7 @@ class SinricController extends Controller
       $currentState = Cache::get('fan_state', 'off');
       $newState = $currentState === 'on' ? 'off' : 'on';
       Cache::forever('fan_state', $newState);
+      $this->deactivateTempControl();
 
       return [
          'success' => true,
