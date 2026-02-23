@@ -72,6 +72,13 @@ foreach ($envOverrides as $key => $value) {
    }
 }
 
+// Fix SCRIPT_NAME so Laravel correctly resolves the full request path.
+// Without this, Vercel's /api/index.php causes Laravel to strip "/api"
+// from the URI, making /api/login match the web route POST /login instead
+// of the API route POST /api/login.
+$_SERVER['SCRIPT_NAME'] = '/index.php';
+$_SERVER['SCRIPT_FILENAME'] = __DIR__ . '/../public/index.php';
+
 // Debug endpoint — visit /api/debug to see what's going on
 if (($_SERVER['REQUEST_URI'] ?? '') === '/api/debug') {
    header('Content-Type: application/json');
