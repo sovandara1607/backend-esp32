@@ -59,7 +59,7 @@ $envOverrides = [
    'APP_EVENTS_CACHE' => '/tmp/bootstrap/cache/events.php',
    'LOG_CHANNEL' => 'stderr',
    'SESSION_DRIVER' => 'cookie',
-   'CACHE_STORE' => 'array',
+   'CACHE_STORE' => 'database',
    'VIEW_COMPILED_PATH' => '/tmp/storage/framework/views',
 ];
 
