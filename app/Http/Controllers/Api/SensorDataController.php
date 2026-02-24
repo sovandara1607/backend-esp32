@@ -50,7 +50,7 @@ class SensorDataController extends Controller
 
          // Apply temperature-based fan control if active
          if ($reading['sensor_type'] === 'temperature') {
-            $this->applyTemperatureControl($reading['value']);
+            $this->applyTemperatureControl($device, $reading['value']);
          }
       }
 
@@ -167,21 +167,21 @@ class SensorDataController extends Controller
     * If temperature control is active, evaluate the active profile's rules
     * and update fan speed in Cache accordingly.
     */
-   private function applyTemperatureControl(float $currentTemp): void
+   private function applyTemperatureControl(Device $device, float $currentTemp): void
    {
-      if (!Cache::get('temp_control_active', false)) {
+      if (!Cache::get("temp_control_active_{$device->id}", false)) {
          return;
       }
 
-      $profileId = Cache::get('temp_control_profile_id');
+      $profileId = Cache::get("temp_control_profile_id_{$device->id}");
       if (!$profileId) {
          return;
       }
 
       $profile = TemperatureProfile::with('rules')->find($profileId);
       if (!$profile || !$profile->is_active) {
-         Cache::forget('temp_control_active');
-         Cache::forget('temp_control_profile_id');
+         Cache::forget("temp_control_active_{$device->id}");
+         Cache::forget("temp_control_profile_id_{$device->id}");
          return;
       }
 
@@ -189,13 +189,13 @@ class SensorDataController extends Controller
 
       if ($speedPercent === -1) {
          // Below all rules: turn fan off
-         Cache::forever('fan_state', 'off');
-         Cache::forever('fan_speed', 0);
+         Cache::forever("fan_state_{$device->id}", 'off');
+         Cache::forever("fan_speed_{$device->id}", 0);
       } else {
          // Convert percent to 0-255 PWM value
          $pwmSpeed = (int) round($speedPercent * 255 / 100);
-         Cache::forever('fan_state', 'on');
-         Cache::forever('fan_speed', $pwmSpeed);
+         Cache::forever("fan_state_{$device->id}", 'on');
+         Cache::forever("fan_speed_{$device->id}", $pwmSpeed);
       }
    }
 }

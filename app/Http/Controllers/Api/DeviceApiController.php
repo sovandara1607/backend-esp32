@@ -102,9 +102,9 @@ class DeviceApiController extends Controller
 
       // Sync with fan cache so ESP32 picks it up via /api/fan/status
       match ($validated['command']) {
-         'on' => Cache::forever('fan_state', 'on'),
-         'off' => Cache::forever('fan_state', 'off'),
-         'set_speed' => Cache::forever('fan_speed', $validated['payload']['speed'] ?? 255),
+         'on' => Cache::forever("fan_state_{$device->id}", 'on'),
+         'off' => Cache::forever("fan_state_{$device->id}", 'off'),
+         'set_speed' => Cache::forever("fan_speed_{$device->id}", $validated['payload']['speed'] ?? 255),
          default => null,
       };
 

@@ -38,6 +38,25 @@
             </p>
          </div>
 
+         <div class="border-t border-neutral-100 pt-4 mt-4">
+            <p class="text-xs font-medium text-neutral-600 mb-3">L298N Motor Driver Pins</p>
+            <div class="grid grid-cols-2 gap-3">
+               <div>
+                  <label for="pin_ena" class="block text-[10px] text-neutral-500 mb-1">ENA Pin (PWM Speed)</label>
+                  <input type="number" name="pin_ena" id="pin_ena" value="{{ old('pin_ena', 15) }}"
+                     min="0" max="39" required
+                     class="w-full rounded border border-neutral-300 px-3 py-2 text-sm font-mono focus:border-black focus:ring-0 focus:outline-none">
+               </div>
+               <div>
+                  <label for="pin_in2" class="block text-[10px] text-neutral-500 mb-1">IN2 Pin (On/Off)</label>
+                  <input type="number" name="pin_in2" id="pin_in2" value="{{ old('pin_in2', 2) }}"
+                     min="0" max="39" required
+                     class="w-full rounded border border-neutral-300 px-3 py-2 text-sm font-mono focus:border-black focus:ring-0 focus:outline-none">
+               </div>
+            </div>
+            <p class="mt-1 text-[10px] text-neutral-400">GPIO pin numbers for L298N motor driver wiring.</p>
+         </div>
+
          <div>
             <label for="location" class="block text-xs font-medium text-neutral-600 mb-1">Location <span
                   class="text-neutral-400">(optional)</span></label>

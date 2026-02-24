@@ -62,7 +62,17 @@
 
       {{-- ─── Fan Control ─── --}}
       <div class="border border-neutral-200 rounded-lg p-5">
-         <h3 class="text-sm font-semibold mb-4">Fan Control</h3>
+         <div class="flex items-center justify-between mb-4">
+            <h3 class="text-sm font-semibold">Fan Control</h3>
+            <select id="fan-device-select" onchange="onFanDeviceChange()"
+               class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white">
+               @foreach($devices as $device)
+               <option value="{{ $device->id }}" data-identifier="{{ $device->device_identifier }}">
+                  {{ $device->name }}
+               </option>
+               @endforeach
+            </select>
+         </div>
          <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-center space-x-4">
                <svg id="fan-icon" class="w-12 h-12 text-neutral-300 transition-all duration-300"
@@ -402,12 +412,26 @@
    let isHandsFree = false;
    let speechSynth = window.speechSynthesis;
 
+   // ─── Device Selection Helpers ───
+   function getSelectedDeviceIdentifier() {
+      const sel = document.getElementById('fan-device-select');
+      if (!sel || !sel.options.length) return 'ESP32-FAN-001';
+      return sel.options[sel.selectedIndex]?.dataset?.identifier || 'ESP32-FAN-001';
+   }
+
+   function onFanDeviceChange() {
+      fetchFanStatus();
+   }
+
    // ═══════════════════════════════════════
    // Fan Control
    // ═══════════════════════════════════════
    async function fetchFanStatus() {
       try {
-         const res = await axios.get('/api/fan/status');
+         const identifier = getSelectedDeviceIdentifier();
+         const res = await axios.get('/api/fan/status', {
+            params: { device: identifier, source: 'browser' }
+         });
          updateFanUI(res.data.status, res.data.speed);
       } catch (e) {
          document.getElementById('fan-status').textContent = 'Error';
@@ -438,16 +462,22 @@
 
    function onSpeedChange(value) {
       document.getElementById('speed-value').textContent = value;
+      const identifier = getSelectedDeviceIdentifier();
       clearTimeout(speedTimeout);
-      speedTimeout = setTimeout(() => axios.get('/api/fan/speed/' + value), 300);
+      speedTimeout = setTimeout(() => axios.get('/api/fan/speed/' + value, {
+         params: { device: identifier }
+      }), 300);
    }
 
    async function toggleFan() {
       const btn = document.getElementById('fan-toggle');
       btn.disabled = true;
       btn.textContent = 'Sending...';
+      const identifier = getSelectedDeviceIdentifier();
       try {
-         await axios.get(currentState === 'on' ? '/api/fan/off' : '/api/fan/on');
+         await axios.get(currentState === 'on' ? '/api/fan/off' : '/api/fan/on', {
+            params: { device: identifier }
+         });
          await fetchFanStatus();
       } catch (e) {
          btn.textContent = 'Error';
@@ -755,6 +785,7 @@
    }
 
    async function executeVoiceCommand(action, device, value = null) {
+      const identifier = getSelectedDeviceIdentifier();
       const cmdMap = {
          'turn_on': `Turn on ${device}`,
          'turn_off': `Turn off ${device}`,
@@ -769,12 +800,14 @@
       try {
          const res = await axios.post('/api/sinric/command', {
             action: action,
-            device: device,
+            device: identifier,
             value: value,
          });
          if (res.data.success) {
             logCommand(res.data.message || `${description} — OK`, 'success');
-            if (device === 'fan') setTimeout(fetchFanStatus, 500);
+            if (action === 'turn_on' || action === 'turn_off' || action === 'set_speed' || action === 'toggle_all') {
+               setTimeout(fetchFanStatus, 500);
+            }
          } else {
             logCommand(res.data.message || `Failed: ${description}`, 'error');
          }

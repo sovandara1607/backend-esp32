@@ -5,6 +5,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\AlertWebController;
 use App\Http\Controllers\TemperatureControlController;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 // ─── Public / Guest Routes ─────────────────────
@@ -41,7 +42,8 @@ Route::middleware('auth')->group(function () {
 
     // Voice Control
     Route::get('/voice-control', function () {
-        return view('voice-control');
+        $devices = Auth::user()->devices()->get();
+        return view('voice-control', compact('devices'));
     })->name('voice-control');
 
     // Temperature Control

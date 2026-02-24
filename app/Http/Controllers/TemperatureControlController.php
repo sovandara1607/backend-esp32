@@ -17,12 +17,13 @@ class TemperatureControlController extends Controller
         $activeProfile = $profiles->firstWhere('is_active', true);
         $devices = $user->devices;
 
+        $device = $devices->first();
         $fanStatus = [
-            'status' => Cache::get('fan_state', 'off'),
-            'speed'  => (int) Cache::get('fan_speed', 255),
+            'status' => $device ? Cache::get("fan_state_{$device->id}", 'off') : 'off',
+            'speed'  => $device ? (int) Cache::get("fan_speed_{$device->id}", 255) : 255,
         ];
 
-        $tempControlActive = Cache::get('temp_control_active', false);
+        $tempControlActive = $device ? Cache::get("temp_control_active_{$device->id}", false) : false;
 
         return view('temperature-control', compact(
             'profiles',
@@ -50,8 +51,10 @@ class TemperatureControlController extends Controller
         abort_unless($profile->user_id === Auth::id(), 403);
 
         if ($profile->is_active) {
-            Cache::forget('temp_control_active');
-            Cache::forget('temp_control_profile_id');
+            foreach (Auth::user()->devices as $device) {
+                Cache::forget("temp_control_active_{$device->id}");
+                Cache::forget("temp_control_profile_id_{$device->id}");
+            }
         }
 
         $profile->delete();
@@ -97,12 +100,12 @@ class TemperatureControlController extends Controller
         // Activate selected
         $profile->update(['is_active' => true]);
 
-        // Set cache flags
-        Cache::forever('temp_control_active', true);
-        Cache::forever('temp_control_profile_id', $profile->id);
-
-        // Turn fan on
-        Cache::forever('fan_state', 'on');
+        // Set cache flags for all user's devices
+        foreach (Auth::user()->devices as $device) {
+            Cache::forever("temp_control_active_{$device->id}", true);
+            Cache::forever("temp_control_profile_id_{$device->id}", $profile->id);
+            Cache::forever("fan_state_{$device->id}", 'on');
+        }
 
         return back()->with('success', 'Temperature control activated with profile: ' . $profile->name);
     }
@@ -111,8 +114,10 @@ class TemperatureControlController extends Controller
     {
         Auth::user()->temperatureProfiles()->update(['is_active' => false]);
 
-        Cache::forget('temp_control_active');
-        Cache::forget('temp_control_profile_id');
+        foreach (Auth::user()->devices as $device) {
+            Cache::forget("temp_control_active_{$device->id}");
+            Cache::forget("temp_control_profile_id_{$device->id}");
+        }
 
         return back()->with('success', 'Temperature control deactivated. Fan now in manual mode.');
     }

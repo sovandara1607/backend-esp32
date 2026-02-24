@@ -37,9 +37,16 @@ class DeviceController extends Controller
             'device_identifier' => 'required|string|max:255|unique:devices',
             'description' => 'nullable|string|max:1000',
             'location' => 'nullable|string|max:255',
+            'pin_ena' => 'required|integer|min:0|max:39',
+            'pin_in2' => 'required|integer|min:0|max:39',
         ]);
 
         $validated['user_id'] = Auth::id();
+        $validated['configuration'] = [
+            'pin_ena' => $validated['pin_ena'],
+            'pin_in2' => $validated['pin_in2'],
+        ];
+        unset($validated['pin_ena'], $validated['pin_in2']);
 
         $device = Device::create($validated);
 
@@ -94,7 +101,15 @@ class DeviceController extends Controller
             'description' => 'nullable|string|max:1000',
             'location' => 'nullable|string|max:255',
             'is_active' => 'boolean',
+            'pin_ena' => 'required|integer|min:0|max:39',
+            'pin_in2' => 'required|integer|min:0|max:39',
         ]);
+
+        $validated['configuration'] = array_merge($device->configuration ?? [], [
+            'pin_ena' => $validated['pin_ena'],
+            'pin_in2' => $validated['pin_in2'],
+        ]);
+        unset($validated['pin_ena'], $validated['pin_in2']);
 
         $device->update($validated);
 
@@ -134,9 +149,9 @@ class DeviceController extends Controller
 
         // Sync with fan cache so ESP32 picks it up via /api/fan/status
         match ($validated['command']) {
-            'on' => Cache::forever('fan_state', 'on'),
-            'off' => Cache::forever('fan_state', 'off'),
-            'set_speed' => Cache::forever('fan_speed', $validated['payload']['speed'] ?? 255),
+            'on' => Cache::forever("fan_state_{$device->id}", 'on'),
+            'off' => Cache::forever("fan_state_{$device->id}", 'off'),
+            'set_speed' => Cache::forever("fan_speed_{$device->id}", $validated['payload']['speed'] ?? 255),
             default => null,
         };
 

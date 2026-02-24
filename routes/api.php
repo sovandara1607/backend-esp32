@@ -13,77 +13,102 @@ use App\Http\Controllers\Api\SinricController;
 Route::post('/register', [AuthController::class, 'apiRegister']);
 Route::post('/login', [AuthController::class, 'apiLogin']);
 
-// ─── ESP32 Fan Control ─────────────────────────
-Route::get('/fan/status', function () {
-    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
-    if ($device) {
+// ─── ESP32 Fan Control (per-device) ─────────────────────────
+Route::get('/fan/status', function (Request $request) {
+    $identifier = $request->query('device', 'ESP32-FAN-001');
+    $source = $request->query('source', 'esp32');
+
+    $device = \App\Models\Device::where('device_identifier', $identifier)->first();
+
+    // Only mark device online when the request comes from the ESP32 hardware
+    if ($device && $source === 'esp32') {
         $device->update(['status' => 'online', 'last_seen_at' => now()]);
     }
+
+    $deviceId = $device?->id;
+
     return response()->json([
-        'status' => Cache::get('fan_state', 'off'),
-        'speed' => (int) Cache::get('fan_speed', 255),
+        'status' => Cache::get("fan_state_{$deviceId}", 'off'),
+        'speed' => (int) Cache::get("fan_speed_{$deviceId}", 255),
+        'pin_ena' => $device?->configuration['pin_ena'] ?? 15,
+        'pin_in2' => $device?->configuration['pin_in2'] ?? 2,
     ]);
 });
 
-Route::get('/fan/on', function () {
-    Cache::forever('fan_state', 'on');
-    // Deactivate temperature control — user switched to manual
-    if (Cache::get('temp_control_active')) {
-        Cache::forget('temp_control_active');
-        Cache::forget('temp_control_profile_id');
+Route::get('/fan/on', function (Request $request) {
+    $identifier = $request->query('device', 'ESP32-FAN-001');
+    $device = \App\Models\Device::where('device_identifier', $identifier)->first();
+    if (!$device) {
+        return response()->json(['error' => 'Device not found'], 404);
+    }
+
+    Cache::forever("fan_state_{$device->id}", 'on');
+
+    if (Cache::get("temp_control_active_{$device->id}")) {
+        Cache::forget("temp_control_active_{$device->id}");
+        Cache::forget("temp_control_profile_id_{$device->id}");
         \App\Models\TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
     }
-    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
-    if ($device) {
-        $device->commands()->create([
-            'user_id' => $device->user_id,
-            'command' => 'on',
-            'status' => 'executed',
-            'executed_at' => now(),
-        ]);
-    }
+
+    $device->commands()->create([
+        'user_id' => $device->user_id,
+        'command' => 'on',
+        'status' => 'executed',
+        'executed_at' => now(),
+    ]);
+
     return response()->json(['message' => 'Command Sent: ON', 'status' => 'on']);
 });
 
-Route::get('/fan/off', function () {
-    Cache::forever('fan_state', 'off');
-    // Deactivate temperature control — user switched to manual
-    if (Cache::get('temp_control_active')) {
-        Cache::forget('temp_control_active');
-        Cache::forget('temp_control_profile_id');
+Route::get('/fan/off', function (Request $request) {
+    $identifier = $request->query('device', 'ESP32-FAN-001');
+    $device = \App\Models\Device::where('device_identifier', $identifier)->first();
+    if (!$device) {
+        return response()->json(['error' => 'Device not found'], 404);
+    }
+
+    Cache::forever("fan_state_{$device->id}", 'off');
+
+    if (Cache::get("temp_control_active_{$device->id}")) {
+        Cache::forget("temp_control_active_{$device->id}");
+        Cache::forget("temp_control_profile_id_{$device->id}");
         \App\Models\TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
     }
-    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
-    if ($device) {
-        $device->commands()->create([
-            'user_id' => $device->user_id,
-            'command' => 'off',
-            'status' => 'executed',
-            'executed_at' => now(),
-        ]);
-    }
+
+    $device->commands()->create([
+        'user_id' => $device->user_id,
+        'command' => 'off',
+        'status' => 'executed',
+        'executed_at' => now(),
+    ]);
+
     return response()->json(['message' => 'Command Sent: OFF', 'status' => 'off']);
 });
 
-Route::get('/fan/speed/{value}', function ($value) {
+Route::get('/fan/speed/{value}', function (Request $request, $value) {
+    $identifier = $request->query('device', 'ESP32-FAN-001');
+    $device = \App\Models\Device::where('device_identifier', $identifier)->first();
+    if (!$device) {
+        return response()->json(['error' => 'Device not found'], 404);
+    }
+
     $speed = max(0, min(255, (int) $value));
-    Cache::forever('fan_speed', $speed);
-    // Deactivate temperature control — user switched to manual
-    if (Cache::get('temp_control_active')) {
-        Cache::forget('temp_control_active');
-        Cache::forget('temp_control_profile_id');
+    Cache::forever("fan_speed_{$device->id}", $speed);
+
+    if (Cache::get("temp_control_active_{$device->id}")) {
+        Cache::forget("temp_control_active_{$device->id}");
+        Cache::forget("temp_control_profile_id_{$device->id}");
         \App\Models\TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
     }
-    $device = \App\Models\Device::where('device_identifier', 'ESP32-FAN-001')->first();
-    if ($device) {
-        $device->commands()->create([
-            'user_id' => $device->user_id,
-            'command' => 'set_speed',
-            'payload' => ['speed' => $speed],
-            'status' => 'executed',
-            'executed_at' => now(),
-        ]);
-    }
+
+    $device->commands()->create([
+        'user_id' => $device->user_id,
+        'command' => 'set_speed',
+        'payload' => ['speed' => $speed],
+        'status' => 'executed',
+        'executed_at' => now(),
+    ]);
+
     return response()->json(['message' => 'Speed set to: ' . $speed, 'speed' => $speed]);
 });
 

@@ -209,8 +209,9 @@
                      <label class="block text-[10px] text-neutral-400 mb-1">Device</label>
                      <select id="custom-device"
                         class="w-full border border-neutral-300 rounded px-2 py-1.5 text-xs focus:border-black focus:ring-0 focus:outline-none bg-white">
-                        <option value="fan">Fan</option>
-                        <!-- <option value="sensor">Sensor</option> -->
+                        @foreach($devices as $device)
+                        <option value="{{ $device->device_identifier }}">{{ $device->name }}</option>
+                        @endforeach
                         <option value="all">All Devices</option>
                      </select>
                   </div>
@@ -599,7 +600,14 @@ SINRIC_DEVICE_ID=your-device-id</pre>
          }
       }
 
+      function getSelectedDeviceIdentifier() {
+         const sel = document.getElementById('custom-device');
+         if (!sel || !sel.options.length) return 'ESP32-FAN-001';
+         return sel.value || 'ESP32-FAN-001';
+      }
+
       async function executeVoiceCommand(action, device, value = null) {
+         const identifier = getSelectedDeviceIdentifier();
          const cmdMap = {
             'turn_on': `Turn on ${device}`,
             'turn_off': `Turn off ${device}`,
@@ -614,7 +622,7 @@ SINRIC_DEVICE_ID=your-device-id</pre>
          try {
             const res = await axios.post('/api/sinric/command', {
                action,
-               device,
+               device: identifier,
                value
             });
             if (res.data.success) {
@@ -638,7 +646,10 @@ SINRIC_DEVICE_ID=your-device-id</pre>
 
       async function fetchFanStatus() {
          try {
-            const res = await axios.get('/api/fan/status');
+            const identifier = getSelectedDeviceIdentifier();
+            const res = await axios.get('/api/fan/status', {
+               params: { device: identifier, source: 'browser' }
+            });
             document.getElementById('vc-fan-status').textContent = res.data.status === 'on' ? 'ON' : 'OFF';
             document.getElementById('vc-fan-status').className = 'text-xs font-medium ' + (res.data.status === 'on' ?
                'text-black' : 'text-neutral-400');

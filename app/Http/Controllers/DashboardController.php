@@ -35,11 +35,14 @@ class DashboardController extends Controller
             ->with('device')
             ->get();
 
-        // Fan status
-        $fanStatus = [
-            'status' => Cache::get('fan_state', 'off'),
-            'speed' => (int) Cache::get('fan_speed', 255),
-        ];
+        // Fan status per device
+        $fanStatuses = [];
+        foreach ($devices as $device) {
+            $fanStatuses[$device->id] = [
+                'status' => Cache::get("fan_state_{$device->id}", 'off'),
+                'speed' => (int) Cache::get("fan_speed_{$device->id}", 255),
+            ];
+        }
 
         // Temperature control
         $profiles = $user->temperatureProfiles()->with('rules')->latest()->get();
@@ -54,7 +57,7 @@ class DashboardController extends Controller
             'unreadAlerts',
             'unreadAlertCount',
             'recentSensorData',
-            'fanStatus',
+            'fanStatuses',
             'profiles',
             'activeProfile',
             'tempControlActive',

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Device;
+use App\Models\SensorData;
 use App\Models\TemperatureProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -13,7 +14,6 @@ class SinricController extends Controller
 {
    /**
     * Check Sinric Pro connection status.
-    * Returns whether the required env vars are configured.
     *
     * GET /api/sinric/status
     */
@@ -35,7 +35,6 @@ class SinricController extends Controller
 
    /**
     * Execute a voice command (simulated Sinric Pro action).
-    * These mirror the commands Google Assistant sends via Sinric Pro.
     *
     * POST /api/sinric/command
     * Body: { action: string, device: string|null, value: mixed }
@@ -49,8 +48,12 @@ class SinricController extends Controller
       ]);
 
       $action = $request->input('action');
-      $device = $request->input('device', 'fan');
+      $deviceName = $request->input('device', 'fan');
       $value  = $request->input('value');
+
+      // Resolve to actual Device model by identifier, or fall back to first device
+      $device = Device::where('device_identifier', $deviceName)->first()
+                ?? Device::first();
 
       $result = match ($action) {
          'turn_on'  => $this->turnOn($device),
@@ -67,7 +70,7 @@ class SinricController extends Controller
 
       Log::info('Sinric Pro command executed', [
          'action' => $action,
-         'device' => $device,
+         'device' => $deviceName,
          'value'  => $value,
          'result' => $result,
       ]);
@@ -77,7 +80,7 @@ class SinricController extends Controller
 
    /**
     * Sinric Pro webhook callback.
-    * This endpoint receives real callbacks from the Sinric Pro cloud
+    * Receives real callbacks from the Sinric Pro cloud
     * when Google Assistant triggers a voice command.
     *
     * POST /api/sinric/callback
@@ -97,7 +100,7 @@ class SinricController extends Controller
 
       // Map Sinric Pro action names to our internal actions
       $actionMap = [
-         'setPowerState'  => $payload['value']['state'] ?? 'Off' === 'On' ? 'turn_on' : 'turn_off',
+         'setPowerState'  => ($payload['value']['state'] ?? 'Off') === 'On' ? 'turn_on' : 'turn_off',
          'setRangeValue'  => 'set_speed',
          'setPercentage'  => 'set_speed',
       ];
@@ -108,15 +111,13 @@ class SinricController extends Controller
          ?? $payload['value']['state']
          ?? null;
 
-      // Convert percentage to 0-255 range for fan speed
-      if (is_numeric($value) && $value <= 100) {
-         $value = (int) round($value * 255 / 100);
-      }
+      // Resolve device
+      $device = Device::first();
 
       $result = match ($internalAction) {
-         'turn_on'   => $this->turnOn('fan'),
-         'turn_off'  => $this->turnOff('fan'),
-         'set_speed' => $this->setSpeed('fan', $value),
+         'turn_on'   => $this->turnOn($device),
+         'turn_off'  => $this->turnOff($device),
+         'set_speed' => $this->setSpeed($device, $value),
          default     => ['success' => false, 'message' => "Unmapped action: {$action}"],
       };
 
@@ -128,91 +129,113 @@ class SinricController extends Controller
 
    // ─── Private helpers ──────────────────────────
 
-   private function deactivateTempControl(): void
+   private function deactivateTempControl(?Device $device): void
    {
-      if (Cache::get('temp_control_active')) {
-         Cache::forget('temp_control_active');
-         Cache::forget('temp_control_profile_id');
-         TemperatureProfile::where('is_active', true)->update(['is_active' => false]);
+      if (!$device) return;
+
+      if (Cache::get("temp_control_active_{$device->id}")) {
+         Cache::forget("temp_control_active_{$device->id}");
+         Cache::forget("temp_control_profile_id_{$device->id}");
+         TemperatureProfile::where('is_active', true)
+            ->where('user_id', $device->user_id)
+            ->update(['is_active' => false]);
       }
    }
 
-   private function turnOn(string $device): array
+   private function turnOn(?Device $device): array
    {
-      Cache::forever('fan_state', 'on');
-      $this->deactivateTempControl();
+      if (!$device) {
+         return ['success' => false, 'message' => 'No device found.'];
+      }
+
+      Cache::forever("fan_state_{$device->id}", 'on');
+      $this->deactivateTempControl($device);
 
       return [
          'success' => true,
-         'message' => "OK, turning the {$device} on.",
+         'message' => "OK, turning the {$device->name} on.",
          'state'   => 'on',
       ];
    }
 
-   private function turnOff(string $device): array
+   private function turnOff(?Device $device): array
    {
-      Cache::forever('fan_state', 'off');
-      $this->deactivateTempControl();
+      if (!$device) {
+         return ['success' => false, 'message' => 'No device found.'];
+      }
+
+      Cache::forever("fan_state_{$device->id}", 'off');
+      $this->deactivateTempControl($device);
 
       return [
          'success' => true,
-         'message' => "OK, turning the {$device} off.",
+         'message' => "OK, turning the {$device->name} off.",
          'state'   => 'off',
       ];
    }
 
-   private function setSpeed(string $device, mixed $value): array
+   private function setSpeed(?Device $device, mixed $value): array
    {
-      $speed = max(0, min(255, (int) round($value * 255 / 100)));
-      Cache::forever('fan_speed', $speed);
-      $this->deactivateTempControl();
+      if (!$device) {
+         return ['success' => false, 'message' => 'No device found.'];
+      }
+
+      $percent = max(0, min(100, (int) $value));
+      $speed = (int) round($percent * 255 / 100);
+      Cache::forever("fan_speed_{$device->id}", $speed);
+      $this->deactivateTempControl($device);
 
       return [
          'success' => true,
-         'message' => "OK, setting the {$device} speed to {$value}%.",
+         'message' => "OK, setting the {$device->name} speed to {$percent}%.",
          'speed'   => $speed,
-         'percent' => (int) $value,
+         'percent' => $percent,
       ];
    }
 
-   private function getTemperature(string $device): array
+   private function getTemperature(?Device $device): array
    {
-      // Get latest sensor reading from database
-      $latest = \App\Models\SensorData::latest('recorded_at')->first();
+      $latest = SensorData::where('sensor_type', 'temperature')
+         ->latest('recorded_at')
+         ->first();
 
-      $temp = $latest?->temperature ?? Cache::get('last_temperature', 25.0);
+      $temp = $latest?->value ?? Cache::get('last_temperature', 25.0);
 
       return [
          'success'     => true,
-         'message'     => "The current temperature is {$temp}°C.",
-         'temperature' => $temp,
+         'message'     => "The current temperature is {$temp} degrees Celsius.",
+         'temperature' => (float) $temp,
       ];
    }
 
-   private function getHumidity(string $device): array
+   private function getHumidity(?Device $device): array
    {
-      $latest = \App\Models\SensorData::latest('recorded_at')->first();
+      $latest = SensorData::where('sensor_type', 'humidity')
+         ->latest('recorded_at')
+         ->first();
 
-      $humidity = $latest?->humidity ?? Cache::get('last_humidity', 60.0);
+      $humidity = $latest?->value ?? Cache::get('last_humidity', 60.0);
 
       return [
          'success'  => true,
-         'message'  => "The current humidity is {$humidity}%.",
-         'humidity' => $humidity,
+         'message'  => "The current humidity is {$humidity} percent.",
+         'humidity' => (float) $humidity,
       ];
    }
 
    private function toggleAll(): array
    {
-      $currentState = Cache::get('fan_state', 'off');
-      $newState = $currentState === 'on' ? 'off' : 'on';
-      Cache::forever('fan_state', $newState);
-      $this->deactivateTempControl();
+      $devices = Device::all();
+      foreach ($devices as $device) {
+         $currentState = Cache::get("fan_state_{$device->id}", 'off');
+         $newState = $currentState === 'on' ? 'off' : 'on';
+         Cache::forever("fan_state_{$device->id}", $newState);
+      }
 
       return [
          'success' => true,
-         'message' => "OK, all devices toggled {$newState}.",
-         'state'   => $newState,
+         'message' => 'OK, all devices toggled.',
+         'state'   => 'toggled',
       ];
    }
 }

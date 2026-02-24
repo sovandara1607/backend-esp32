@@ -50,6 +50,16 @@
                   {{ $device->last_seen_at ? $device->last_seen_at->diffForHumans() : 'Never' }}
                </dd>
             </div>
+            @if($device->configuration)
+            <div>
+               <dt class="text-[10px] text-neutral-400 uppercase tracking-wide">ENA Pin</dt>
+               <dd class="text-xs font-mono mt-0.5">GPIO {{ $device->configuration['pin_ena'] ?? '—' }}</dd>
+            </div>
+            <div>
+               <dt class="text-[10px] text-neutral-400 uppercase tracking-wide">IN2 Pin</dt>
+               <dd class="text-xs font-mono mt-0.5">GPIO {{ $device->configuration['pin_in2'] ?? '—' }}</dd>
+            </div>
+            @endif
             @if($device->description)
             <div class="col-span-2">
                <dt class="text-[10px] text-neutral-400 uppercase tracking-wide">Description</dt>
