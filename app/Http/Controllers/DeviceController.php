@@ -144,7 +144,8 @@ class DeviceController extends Controller
             'user_id' => Auth::id(),
             'command' => $validated['command'],
             'payload' => $validated['payload'] ?? null,
-            'status' => 'pending',
+            'status' => 'executed',
+            'executed_at' => now(),
         ]);
 
         // Sync with fan cache so ESP32 picks it up via /api/fan/status
