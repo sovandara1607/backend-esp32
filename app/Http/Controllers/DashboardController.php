@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Models\Device;
 use App\Models\SensorData;
-use App\Models\Alert;
 use App\Models\TemperatureProfile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -23,9 +22,6 @@ class DashboardController extends Controller
         $totalDevices = $devices->count();
         $onlineDevices = $devices->where('status', 'online')->count();
         $offlineDevices = $devices->where('status', 'offline')->count();
-
-        $unreadAlerts = $user->alerts()->where('is_read', false)->latest()->limit(10)->get();
-        $unreadAlertCount = $user->alerts()->where('is_read', false)->count();
 
         // Recent sensor data across all user devices
         $deviceIds = $devices->pluck('id');
@@ -51,8 +47,6 @@ class DashboardController extends Controller
             'totalDevices',
             'onlineDevices',
             'offlineDevices',
-            'unreadAlerts',
-            'unreadAlertCount',
             'recentSensorData',
             'fanStatus',
             'profiles',

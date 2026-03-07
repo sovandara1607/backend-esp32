@@ -6,7 +6,6 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\Api\DeviceApiController;
 use App\Http\Controllers\Api\SensorDataController;
-use App\Http\Controllers\Api\AlertController;
 use App\Http\Controllers\Api\SinricController;
 
 // ─── API Authentication ─────────────────────────
@@ -121,11 +120,4 @@ Route::middleware('auth:sanctum')->group(function () {
         'destroy' => 'api.devices.destroy',
     ]);
     Route::post('/devices/{device}/commands', [DeviceApiController::class, 'sendCommand']);
-
-    // Alerts
-    Route::get('/alerts', [AlertController::class, 'index']);
-    Route::post('/alerts', [AlertController::class, 'store']);
-    Route::patch('/alerts/{alert}/read', [AlertController::class, 'markRead']);
-    Route::post('/alerts/read-all', [AlertController::class, 'markAllRead']);
-    Route::delete('/alerts/{alert}', [AlertController::class, 'destroy']);
 });

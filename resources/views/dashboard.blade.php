@@ -2,23 +2,97 @@
 @section('title', 'Dashboard')
 
 @section('content')
+<style>
+   @keyframes fan-spin {
+      to {
+         transform: rotate(360deg);
+      }
+   }
+
+   .fan-spinning {
+      animation: fan-spin 1s linear infinite;
+   }
+
+   @keyframes fade-up {
+      from {
+         opacity: 0;
+         transform: translateY(8px);
+      }
+
+      to {
+         opacity: 1;
+         transform: translateY(0);
+      }
+   }
+
+   .anim-up {
+      animation: fade-up 0.4s ease-out both;
+   }
+
+   .anim-up-1 {
+      animation-delay: 0.05s;
+   }
+
+   .anim-up-2 {
+      animation-delay: 0.1s;
+   }
+
+   .anim-up-3 {
+      animation-delay: 0.15s;
+   }
+</style>
+
+{{-- ═══ Page Header ═══ --}}
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+   <div>
+      <h1 class="text-xl font-semibold text-black">Dashboard</h1>
+      <p class="text-xs text-neutral-400 mt-1">Monitor and control your IoT devices at a glance</p>
+   </div>
+   <div class="flex items-center gap-2">
+      <div class="flex items-center space-x-2 px-3 py-1.5 border border-neutral-200 rounded-full">
+         <div id="sinric-status-dot" class="w-2 h-2 rounded-full bg-neutral-300 transition-colors"></div>
+         <span id="sinric-status-text" class="text-[11px] text-neutral-400">Checking...</span>
+      </div>
+   </div>
+</div>
+
 {{-- ═══ Stats Bar ═══ --}}
-<div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-   <div class="border border-neutral-200 rounded-lg p-4">
-      <p class="text-xs text-neutral-500 uppercase tracking-wide">Total Devices</p>
-      <p class="text-2xl font-bold mt-1">{{ $totalDevices }}</p>
+<div class="grid grid-cols-3 gap-4 mb-6">
+   <div class="border border-neutral-200 rounded-lg p-4 flex items-center gap-4 anim-up">
+      <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
+         <svg class="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+               d="M12 12c-2.5-2.5-5-3-7-1s-1.5 4.5 1 7m6-6c2.5-2.5 3-5 1-7s-4.5-1.5-7 1m6 6c2.5 2.5 5 3 7 1s1.5-4.5-1-7m-6 6c-2.5 2.5-3 5-1 7s4.5 1.5 7-1" />
+            <circle cx="12" cy="12" r="1" fill="currentColor" />
+         </svg>
+      </div>
+      <div>
+         <p class="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Total Devices</p>
+         <p class="text-2xl font-bold text-black leading-tight">{{ $totalDevices }}</p>
+      </div>
    </div>
-   <div class="border border-neutral-200 rounded-lg p-4">
-      <p class="text-xs text-neutral-500 uppercase tracking-wide">Online</p>
-      <p class="text-2xl font-bold mt-1">{{ $onlineDevices }}</p>
+   <div class="border border-neutral-200 rounded-lg p-4 flex items-center gap-4 anim-up anim-up-1">
+      <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
+         <svg class="w-5 h-5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+         </svg>
+      </div>
+      <div>
+         <p class="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Online</p>
+         <p class="text-2xl font-bold text-black leading-tight">{{ $onlineDevices }}</p>
+      </div>
    </div>
-   <div class="border border-neutral-200 rounded-lg p-4">
-      <p class="text-xs text-neutral-500 uppercase tracking-wide">Offline</p>
-      <p class="text-2xl font-bold mt-1">{{ $offlineDevices }}</p>
-   </div>
-   <div class="border border-neutral-200 rounded-lg p-4">
-      <p class="text-xs text-neutral-500 uppercase tracking-wide">Alerts</p>
-      <p class="text-2xl font-bold mt-1">{{ $unreadAlertCount }}</p>
+   <div class="border border-neutral-200 rounded-lg p-4 flex items-center gap-4 anim-up anim-up-2">
+      <div class="flex-shrink-0 w-10 h-10 rounded-lg bg-neutral-100 flex items-center justify-center">
+         <svg class="w-5 h-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round"
+               d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728L5.636 5.636m12.728 12.728A9 9 0 015.636 5.636" />
+         </svg>
+      </div>
+      <div>
+         <p class="text-[10px] text-neutral-400 uppercase tracking-wider font-medium">Offline</p>
+         <p class="text-2xl font-bold text-black leading-tight">{{ $offlineDevices }}</p>
+      </div>
    </div>
 </div>
 
@@ -27,11 +101,21 @@
    <div class="lg:col-span-2 space-y-6">
 
       {{-- ─── Sensor Chart ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
+      <div class="border border-neutral-200 rounded-lg p-5 anim-up">
          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-            <h3 class="text-sm font-semibold">Sensor Data</h3>
-            <div class="flex flex-wrap gap-2">
-               <select id="chart-device" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
+            <div class="flex items-center space-x-2">
+               <div class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+                  </svg>
+               </div>
+               <h3 class="text-sm font-semibold">Sensor Data</h3>
+            </div>
+            <div class="flex flex-wrap gap-1.5">
+               <select id="chart-device"
+                  class="text-[11px] border border-neutral-200 rounded-md px-2.5 py-1.5 bg-white focus:border-black focus:ring-0 focus:outline-none transition"
                   onchange="loadChartData()">
                   @foreach($devices as $device)
                   <option value="{{ $device->id }}">{{ $device->name }}</option>
@@ -40,12 +124,14 @@
                   <option value="">No devices</option>
                   @endif
                </select>
-               <select id="chart-sensor" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
+               <select id="chart-sensor"
+                  class="text-[11px] border border-neutral-200 rounded-md px-2.5 py-1.5 bg-white focus:border-black focus:ring-0 focus:outline-none transition"
                   onchange="loadChartData()">
                   <option value="temperature">Temperature</option>
                   <option value="humidity">Humidity</option>
                </select>
-               <select id="chart-hours" class="text-xs border border-neutral-300 rounded px-2 py-1 bg-white"
+               <select id="chart-hours"
+                  class="text-[11px] border border-neutral-200 rounded-md px-2.5 py-1.5 bg-white focus:border-black focus:ring-0 focus:outline-none transition"
                   onchange="loadChartData()">
                   <option value="1">1h</option>
                   <option value="6">6h</option>
@@ -61,51 +147,192 @@
       </div>
 
       {{-- ─── Fan Control ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
-         <h3 class="text-sm font-semibold mb-4">Fan Control</h3>
-         <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div class="flex items-center space-x-4">
-               <svg id="fan-icon" class="w-12 h-12 text-neutral-300 transition-all duration-300"
-                  xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="1.5">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 12c0-2.5-2-4.5-4.5-4.5S3 7 3 9s2.5 3 4.5 3H12z
-                     M12 12c2.5 0 4.5-2 4.5-4.5S17 3 15 3s-3 2.5-3 4.5V12z
-                     M12 12c0 2.5 2 4.5 4.5 4.5S21 17 21 15s-2.5-3-4.5-3H12z
-                     M12 12c-2.5 0-4.5 2-4.5 4.5S7 21 9 21s3-2.5 3-4.5V12z" />
-                  <circle cx="12" cy="12" r="1.5" fill="currentColor" />
-               </svg>
-               <div>
-                  <p class="text-xs text-neutral-500">Status</p>
-                  <p id="fan-status" class="text-lg font-bold text-neutral-300">--</p>
+      <div class="border border-neutral-200 rounded-lg p-5 anim-up anim-up-1">
+         <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center space-x-2">
+               <div class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 12c-2.5-2.5-5-3-7-1s-1.5 4.5 1 7m6-6c2.5-2.5 3-5 1-7s-4.5-1.5-7 1m6 6c2.5 2.5 5 3 7 1s1.5-4.5-1-7m-6 6c-2.5 2.5-3 5-1 7s4.5 1.5 7-1" />
+                     <circle cx="12" cy="12" r="1" fill="currentColor" />
+                  </svg>
                </div>
+               <h3 class="text-sm font-semibold">Fan Control</h3>
             </div>
-            <div class="flex items-center space-x-3">
-               <span id="fan-mode-badge"
-                  class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $tempControlActive ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
-                  {{ $tempControlActive ? 'Auto' : 'Manual' }}
-               </span>
+            <span id="fan-mode-badge"
+               class="text-[10px] font-medium px-2.5 py-1 rounded-full border {{ $tempControlActive ? 'border-black text-black bg-neutral-50' : 'border-neutral-200 text-neutral-400' }}">
+               {{ $tempControlActive ? 'Auto Mode' : 'Manual Mode' }}
+            </span>
+         </div>
+
+         <div class="flex flex-col sm:flex-row items-center gap-6">
+            {{-- Fan Visual --}}
+            <div class="flex flex-col items-center">
+               <div
+                  class="w-20 h-20 rounded-full bg-neutral-50 border-2 border-neutral-200 flex items-center justify-center transition-all duration-300"
+                  id="fan-visual">
+                  <svg id="fan-icon" class="w-10 h-10 text-neutral-300 transition-all duration-300"
+                     xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="1.5">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 12c0-2.5-2-4.5-4.5-4.5S3 7 3 9s2.5 3 4.5 3H12z
+                        M12 12c2.5 0 4.5-2 4.5-4.5S17 3 15 3s-3 2.5-3 4.5V12z
+                        M12 12c0 2.5 2 4.5 4.5 4.5S21 17 21 15s-2.5-3-4.5-3H12z
+                        M12 12c-2.5 0-4.5 2-4.5 4.5S7 21 9 21s3-2.5 3-4.5V12z" />
+                     <circle cx="12" cy="12" r="1.5" fill="currentColor" />
+                  </svg>
+               </div>
+               <p id="fan-status" class="text-sm font-bold text-neutral-300 mt-2">--</p>
+            </div>
+
+            {{-- Controls --}}
+            <div class="flex-1 w-full space-y-4">
                <button id="fan-toggle" onclick="toggleFan()" disabled
-                  class="px-5 py-2 rounded text-sm font-medium bg-neutral-200 text-neutral-500 cursor-not-allowed transition">
+                  class="w-full px-5 py-2.5 rounded-lg text-sm font-medium bg-neutral-100 text-neutral-400 cursor-not-allowed transition-all duration-200">
                   Loading...
                </button>
+               <div id="speed-section" class="hidden">
+                  <div class="flex items-center justify-between mb-2">
+                     <label class="text-xs text-neutral-500">Fan Speed</label>
+                     <span id="speed-value"
+                        class="text-xs font-bold text-black bg-neutral-100 px-2 py-0.5 rounded">255</span>
+                  </div>
+                  <input id="speed-slider" type="range" min="0" max="255" value="255"
+                     class="w-full h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
+                     oninput="onSpeedChange(this.value)">
+                  <div class="flex justify-between mt-1">
+                     <span class="text-[10px] text-neutral-300">0</span>
+                     <span class="text-[10px] text-neutral-300">255</span>
+                  </div>
+               </div>
             </div>
          </div>
-         <div id="speed-section" class="mt-4 pt-3 border-t border-neutral-100 hidden">
-            <div class="flex items-center justify-between mb-1.5">
-               <label class="text-xs text-neutral-500">Speed</label>
-               <span id="speed-value" class="text-xs font-semibold">255</span>
+      </div>
+
+      {{-- ─── Voice Control ─── --}}
+      <div class="border border-neutral-200 rounded-lg p-5 anim-up anim-up-2">
+         <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center space-x-2">
+               <div class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                  </svg>
+               </div>
+               <h3 class="text-sm font-semibold">Voice Control</h3>
             </div>
-            <input id="speed-slider" type="range" min="0" max="255" value="255"
-               class="w-full h-1.5 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-black"
-               oninput="onSpeedChange(this.value)">
+            <div class="flex items-center space-x-3">
+               <div class="flex items-center space-x-1.5">
+                  <div id="sinric-status-dot" class="w-2 h-2 rounded-full bg-neutral-300 transition-colors"></div>
+                  <span id="sinric-status-text" class="text-[10px] text-neutral-400">Checking...</span>
+               </div>
+               <a href="{{ route('voice-control') }}"
+                  class="text-[10px] text-neutral-400 hover:text-black underline">Full Page</a>
+            </div>
+         </div>
+
+         {{-- Mic + Status --}}
+         <div class="flex items-center gap-3 mb-4">
+            <button id="mic-btn" onclick="toggleSpeech()"
+               class="relative flex-shrink-0 w-11 h-11 rounded-full border-2 border-neutral-300 bg-white flex items-center justify-center transition-all duration-300 hover:border-black focus:outline-none group"
+               title="Click to speak a command">
+               <div id="mic-pulse"
+                  class="absolute inset-0 rounded-full bg-black animate-ping opacity-0 pointer-events-none"></div>
+               <svg id="mic-icon"
+                  class="w-5 h-5 text-neutral-400 group-hover:text-black relative z-10 transition-colors" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+               </svg>
+            </button>
+            <div class="flex-1 min-w-0">
+               <p id="mic-status" class="text-[11px] text-neutral-500">Click the mic or say "Hey Fan"</p>
+               <p id="mic-transcript" class="text-[11px] text-black font-medium truncate mt-0.5"></p>
+            </div>
+            <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0" title="Hands-free mode">
+               <input type="checkbox" id="handsfree-toggle" onchange="toggleHandsFree()" class="sr-only peer">
+               <div
+                  class="w-7 h-4 bg-neutral-200 peer-checked:bg-black rounded-full relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-3 after:h-3 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-3">
+               </div>
+            </label>
+         </div>
+         <p id="mic-unsupported" class="hidden text-[10px] text-neutral-400 mb-3">Your browser doesn't support speech
+            recognition. Try Chrome or Edge.</p>
+
+         {{-- Quick Commands Grid --}}
+         <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            <button onclick="executeVoiceCommand('turn_on', 'fan')"
+               class="flex items-center gap-1.5 px-2 py-1.5 border border-neutral-100 rounded-lg hover:border-black text-[11px] transition group">
+               <svg class="w-3 h-3 text-neutral-300 group-hover:text-black transition-colors" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+               </svg>
+               Fan On
+            </button>
+            <button onclick="executeVoiceCommand('turn_off', 'fan')"
+               class="flex items-center gap-1.5 px-2 py-1.5 border border-neutral-100 rounded-lg hover:border-black text-[11px] transition group">
+               <svg class="w-3 h-3 text-neutral-300 group-hover:text-black transition-colors" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4.93 4.93l14.14 14.14" />
+               </svg>
+               Fan Off
+            </button>
+            <button onclick="executeVoiceCommand('get_temperature', 'sensor')"
+               class="flex items-center gap-1.5 px-2 py-1.5 border border-neutral-100 rounded-lg hover:border-black text-[11px] transition group">
+               <svg class="w-3 h-3 text-neutral-300 group-hover:text-black transition-colors" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M12 3v13.5M12 3a2.5 2.5 0 00-2.5 2.5v8.036a4 4 0 104.999 0V5.5A2.5 2.5 0 0012 3z" />
+               </svg>
+               Temp
+            </button>
+            <button onclick="executeVoiceCommand('get_humidity', 'sensor')"
+               class="flex items-center gap-1.5 px-2 py-1.5 border border-neutral-100 rounded-lg hover:border-black text-[11px] transition group">
+               <svg class="w-3 h-3 text-neutral-300 group-hover:text-black transition-colors" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M12 21a8 8 0 01-8-8c0-4 8-12 8-12s8 8 8 12a8 8 0 01-8 8z" />
+               </svg>
+               Humidity
+            </button>
+         </div>
+
+         {{-- Command Log --}}
+         <div class="mt-3">
+            <div class="flex items-center justify-between mb-1.5">
+               <p class="text-[10px] text-neutral-400">Command Log</p>
+               <button onclick="clearCommandLog()" class="text-[10px] text-neutral-400 hover:text-black">Clear</button>
+            </div>
+            <div id="voice-command-log"
+               class="bg-neutral-50 rounded-lg p-2 max-h-24 overflow-y-auto font-mono text-[10px] text-neutral-600 space-y-0.5">
+               <p class="text-neutral-400 italic">No commands executed yet.</p>
+            </div>
          </div>
       </div>
 
       {{-- ─── Temperature Control ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
+      <div class="border border-neutral-200 rounded-lg p-5 anim-up anim-up-2">
          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold">Temperature Control</h3>
             <div class="flex items-center space-x-2">
+               <div class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 3v13.5M12 3a2.5 2.5 0 00-2.5 2.5v8.036a4 4 0 104.999 0V5.5A2.5 2.5 0 0012 3z" />
+                  </svg>
+               </div>
+               <h3 class="text-sm font-semibold">Temperature Control</h3>
+            </div>
+            <div class="flex items-center space-x-2">
+               <a href="{{ route('temperature-control') }}"
+                  class="text-[10px] text-neutral-400 hover:text-black transition">
+                  <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                  </svg>
+               </a>
                @if($tempControlActive && $activeProfile)
                <span class="w-2 h-2 rounded-full bg-black"></span>
                <span class="text-[10px] text-black font-medium">{{ $activeProfile->name }}</span>
@@ -117,13 +344,14 @@
          </div>
 
          @if($tempControlActive && $activeProfile)
-         <div class="flex items-center justify-between p-3 bg-neutral-50 rounded mb-4">
+         <div class="flex items-center justify-between p-3 bg-neutral-50 rounded-lg mb-4">
             <div>
                <p class="text-xs text-neutral-500">Active Profile</p>
                <p class="text-sm font-semibold mt-0.5">{{ $activeProfile->name }}</p>
                <div class="mt-1.5 flex flex-wrap gap-2">
                   @foreach($activeProfile->rules->sortBy('temperature') as $rule)
-                  <span class="text-[10px] text-neutral-500 bg-white border border-neutral-200 rounded px-1.5 py-0.5">
+                  <span
+                     class="text-[10px] text-neutral-500 bg-white border border-neutral-200 rounded-md px-1.5 py-0.5">
                      &ge;{{ $rule->temperature }}C &rarr; {{ $rule->fan_speed_percent }}%
                   </span>
                   @endforeach
@@ -132,7 +360,7 @@
             <form method="POST" action="{{ route('temperature-control.deactivate') }}">
                @csrf
                <button type="submit"
-                  class="px-3 py-1.5 border border-black text-black text-xs rounded hover:bg-neutral-50 transition">
+                  class="px-3 py-1.5 border border-black text-black text-xs rounded-lg hover:bg-neutral-50 transition">
                   Deactivate
                </button>
             </form>
@@ -149,7 +377,7 @@
                   <span class="text-xs font-medium">{{ $profile->name }}</span>
                   @if($profile->is_active)
                   <span
-                     class="text-[10px] font-medium border border-black text-black rounded px-1.5 py-0.5">Active</span>
+                     class="text-[10px] font-medium border border-black text-black rounded-full px-2 py-0.5">Active</span>
                   @endif
                   <span class="text-[10px] text-neutral-400">{{ $profile->rules->count() }}
                      rule{{ $profile->rules->count() !== 1 ? 's' : '' }}</span>
@@ -163,8 +391,7 @@
                   @endif
                   <form method="POST" action="{{ route('temperature-control.destroy-profile', $profile) }}"
                      onsubmit="return confirm('Delete this profile?')">
-                     @csrf
-                     @method('DELETE')
+                     @csrf @method('DELETE')
                      <button type="submit" class="text-[10px] text-neutral-400 hover:text-black">Delete</button>
                   </form>
                </div>
@@ -192,11 +419,11 @@
                class="flex items-end gap-2 mt-2">
                @csrf
                <input type="number" name="temperature" step="0.1" required placeholder="Temp C"
-                  class="w-20 border border-neutral-300 rounded px-2 py-1 text-[11px] focus:border-black focus:ring-0 focus:outline-none">
+                  class="w-20 border border-neutral-200 rounded-md px-2 py-1 text-[11px] focus:border-black focus:ring-0 focus:outline-none">
                <input type="number" name="fan_speed_percent" min="0" max="100" required placeholder="Speed %"
-                  class="w-20 border border-neutral-300 rounded px-2 py-1 text-[11px] focus:border-black focus:ring-0 focus:outline-none">
+                  class="w-20 border border-neutral-200 rounded-md px-2 py-1 text-[11px] focus:border-black focus:ring-0 focus:outline-none">
                <button type="submit"
-                  class="px-2 py-1 bg-black text-white text-[10px] rounded hover:bg-neutral-800 transition">Add</button>
+                  class="px-2 py-1 bg-black text-white text-[10px] rounded-md hover:bg-neutral-800 transition">Add</button>
             </form>
          </div>
          @empty
@@ -206,76 +433,49 @@
             class="flex items-end gap-2 mt-3 pt-3 border-t border-neutral-100">
             @csrf
             <input type="text" name="name" required placeholder="New profile name..."
-               class="flex-1 border border-neutral-300 rounded px-2 py-1.5 text-xs focus:border-black focus:ring-0 focus:outline-none">
+               class="flex-1 border border-neutral-200 rounded-md px-2 py-1.5 text-xs focus:border-black focus:ring-0 focus:outline-none">
             <button type="submit"
-               class="px-3 py-1.5 bg-black text-white text-xs rounded hover:bg-neutral-800 transition whitespace-nowrap">
+               class="px-3 py-1.5 bg-black text-white text-xs rounded-lg hover:bg-neutral-800 transition whitespace-nowrap">
                Create
             </button>
          </form>
       </div>
 
-      {{-- ─── Voice Control ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
-         <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold">Voice Control</h3>
-            <div class="flex items-center space-x-2">
-               <div id="sinric-status-dot" class="w-2 h-2 rounded-full bg-neutral-300"></div>
-               <span id="sinric-status-text" class="text-[10px] text-neutral-400">Checking...</span>
-            </div>
-         </div>
+   </div>
 
-         <div class="flex items-center gap-3 mb-4 p-3 bg-neutral-50 rounded-lg">
-            <button id="mic-btn" onclick="toggleSpeech()"
-               class="relative flex-shrink-0 w-10 h-10 rounded-full border-2 border-neutral-300 bg-white flex items-center justify-center transition-all duration-200 hover:border-black focus:outline-none"
-               title="Click to speak a command">
-               <div id="mic-pulse"
-                  class="absolute inset-0 rounded-full bg-black animate-ping opacity-0 pointer-events-none"></div>
-               <svg id="mic-icon" class="w-5 h-5 text-neutral-400 relative z-10" fill="none" viewBox="0 0 24 24"
-                  stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round"
-                     d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
-               </svg>
-            </button>
-            <div class="flex-1 min-w-0">
-               <p id="mic-status" class="text-xs text-neutral-500">Click the mic to speak a command</p>
-               <p id="mic-transcript" class="text-xs text-black font-medium truncate mt-0.5"></p>
-            </div>
-            <label class="flex items-center gap-1.5 cursor-pointer flex-shrink-0">
-               <span class="text-[10px] text-neutral-400">Hands-free</span>
-               <input type="checkbox" id="handsfree-toggle" onchange="toggleHandsFree()" class="sr-only peer">
-               <div
-                  class="w-7 h-4 bg-neutral-200 peer-checked:bg-black rounded-full relative transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:w-3 after:h-3 after:bg-white after:rounded-full after:transition-all peer-checked:after:translate-x-3">
-               </div>
-            </label>
-         </div>
-         <p id="mic-unsupported" class="hidden text-[10px] text-neutral-400 mb-3">Your browser doesn't support speech
-            recognition. Try Chrome or Edge.</p>
-
-         <div>
-            <div class="flex items-center justify-between mb-2">
-               <p class="text-xs text-neutral-500">Command Log</p>
-               <button onclick="clearCommandLog()"
-                  class="text-[10px] underline text-neutral-400 hover:text-black">Clear</button>
-            </div>
-            <div id="voice-command-log"
-               class="bg-neutral-50 rounded p-3 max-h-32 overflow-y-auto font-mono text-[11px] text-neutral-600 space-y-1">
-               <p class="text-neutral-400 italic">No commands executed yet.</p>
-            </div>
-         </div>
-      </div>
-
+   {{-- ═══ Right Column (1/3) ═══ --}}
+   <div class="space-y-6">
 
       {{-- ─── Devices ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
+      <div class="border border-neutral-200 rounded-lg p-5 anim-up">
          <div class="flex items-center justify-between mb-4">
-            <h3 class="text-sm font-semibold">Devices</h3>
-            <a href="{{ route('devices.create') }}" class="text-xs font-medium text-neutral-500 hover:text-black">+ Add
-               Device</a>
+            <div class="flex items-center space-x-2">
+               <div class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
+               </div>
+               <h3 class="text-sm font-semibold">Devices</h3>
+            </div>
+            <a href="{{ route('devices.create') }}"
+               class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center hover:bg-black hover:text-white text-neutral-500 transition-all">
+               <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+               </svg>
+            </a>
          </div>
          @forelse($devices as $device)
          <div class="flex items-center justify-between py-2.5 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
             <div class="flex items-center space-x-2.5">
-               <div class="w-1.5 h-1.5 rounded-full {{ $device->status === 'online' ? 'bg-black' : 'bg-neutral-300' }}">
+               <div
+                  class="w-7 h-7 rounded-lg {{ $device->status === 'online' ? 'bg-black' : 'bg-neutral-100' }} flex items-center justify-center">
+                  <svg class="w-3.5 h-3.5 {{ $device->status === 'online' ? 'text-white' : 'text-neutral-400' }}"
+                     fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z" />
+                  </svg>
                </div>
                <div>
                   <a href="{{ route('devices.show', $device) }}"
@@ -286,7 +486,7 @@
                </div>
             </div>
             <span
-               class="text-[10px] font-medium px-2 py-0.5 rounded border {{ $device->status === 'online' ? 'border-black text-black' : 'border-neutral-300 text-neutral-400' }}">
+               class="text-[10px] font-medium px-2.5 py-1 rounded-full border {{ $device->status === 'online' ? 'border-black text-black' : 'border-neutral-200 text-neutral-400' }}">
                {{ ucfirst($device->status) }}
             </span>
          </div>
@@ -299,44 +499,41 @@
          </div>
          @endforelse
       </div>
-   </div>
-
-   {{-- ═══ Right Column (1/3) ═══ --}}
-   <div class="space-y-6">
-
-      {{-- ─── Alerts ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
-         <div class="flex items-center justify-between mb-3">
-            <h3 class="text-sm font-semibold">Recent Alerts</h3>
-            <a href="{{ route('alerts.index') }}" class="text-[10px] text-neutral-400 hover:text-black underline">View
-               All</a>
-         </div>
-         @forelse($unreadAlerts as $alert)
-         <div class="flex items-start space-x-2.5 py-2 {{ !$loop->last ? 'border-b border-neutral-100' : '' }}">
-            <div class="mt-1">
-               <span
-                  class="flex h-1.5 w-1.5 rounded-full {{ $alert->severity === 'critical' ? 'bg-black' : 'bg-neutral-400' }}"></span>
-            </div>
-            <div class="flex-1 min-w-0">
-               <p class="text-xs">{{ $alert->message }}</p>
-               <p class="text-[10px] text-neutral-400 mt-0.5">
-                  {{ $alert->triggered_at ? $alert->triggered_at->diffForHumans() : $alert->created_at->diffForHumans() }}
-               </p>
-            </div>
-         </div>
-         @empty
-         <p class="text-xs text-neutral-400 text-center py-4">No active alerts</p>
-         @endforelse
-      </div>
 
       {{-- ─── Recent Readings ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
-         <h3 class="text-sm font-semibold mb-3">Recent Readings</h3>
+      <div class="border border-neutral-200 rounded-lg p-5 anim-up anim-up-1">
+         <div class="flex items-center space-x-2 mb-3">
+            <div class="w-7 h-7 rounded-lg bg-neutral-100 flex items-center justify-center">
+               <svg class="w-3.5 h-3.5 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                  stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round"
+                     d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+               </svg>
+            </div>
+            <h3 class="text-sm font-semibold">Recent Readings</h3>
+         </div>
          @forelse($recentSensorData->take(8) as $reading)
          <div class="flex items-center justify-between py-2 {{ !$loop->last ? 'border-b border-neutral-50' : '' }}">
-            <div>
-               <p class="text-xs font-medium">{{ ucfirst($reading->sensor_type) }}</p>
-               <p class="text-[10px] text-neutral-400">{{ $reading->device->name }}</p>
+            <div class="flex items-center space-x-2">
+               <div class="w-6 h-6 rounded bg-neutral-50 flex items-center justify-center">
+                  @if($reading->sensor_type === 'temperature')
+                  <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 3v13.5M12 3a2.5 2.5 0 00-2.5 2.5v8.036a4 4 0 104.999 0V5.5A2.5 2.5 0 0012 3z" />
+                  </svg>
+                  @else
+                  <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                     stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round"
+                        d="M12 21a8 8 0 01-8-8c0-4 8-12 8-12s8 8 8 12a8 8 0 01-8 8z" />
+                  </svg>
+                  @endif
+               </div>
+               <div>
+                  <p class="text-xs font-medium">{{ ucfirst($reading->sensor_type) }}</p>
+                  <p class="text-[10px] text-neutral-400">{{ $reading->device->name }}</p>
+               </div>
             </div>
             <div class="text-right">
                <p class="text-xs font-semibold">{{ $reading->value }} {{ $reading->unit }}</p>
@@ -346,45 +543,6 @@
          @empty
          <p class="text-xs text-neutral-400 text-center py-4">No readings yet</p>
          @endforelse
-      </div>
-
-      {{-- ─── Quick Actions ─── --}}
-      <div class="border border-neutral-200 rounded-lg p-5">
-         <h3 class="text-sm font-semibold mb-3">Quick Actions</h3>
-         <div class="space-y-2">
-            <button onclick="executeVoiceCommand('turn_on', 'fan')"
-               class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
-               <span>Turn Fan On</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-               </svg>
-            </button>
-            <button onclick="executeVoiceCommand('turn_off', 'fan')"
-               class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
-               <span>Turn Fan Off</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-               </svg>
-            </button>
-            <button onclick="executeVoiceCommand('get_temperature', 'sensor')"
-               class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
-               <span>Get Temperature</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-               </svg>
-            </button>
-            <button onclick="executeVoiceCommand('get_humidity', 'sensor')"
-               class="w-full text-left flex items-center justify-between px-3 py-2 border border-neutral-200 rounded hover:border-black transition text-xs">
-               <span>Get Humidity</span>
-               <svg class="w-3 h-3 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                  stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
-               </svg>
-            </button>
-         </div>
       </div>
    </div>
 </div>
@@ -420,16 +578,22 @@
       const isOn = status === 'on';
 
       document.getElementById('fan-status').textContent = isOn ? 'ON' : 'OFF';
-      document.getElementById('fan-status').className = 'text-lg font-bold ' + (isOn ? 'text-black' : 'text-neutral-300');
+      document.getElementById('fan-status').className = 'text-sm font-bold mt-2 ' + (isOn ? 'text-black' :
+         'text-neutral-300');
 
       const btn = document.getElementById('fan-toggle');
       btn.disabled = false;
-      btn.className = 'px-5 py-2 rounded text-sm font-medium transition cursor-pointer ' +
+      btn.className = 'w-full px-5 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer ' +
          (isOn ? 'bg-black text-white hover:bg-neutral-800' : 'border border-black text-black hover:bg-neutral-50');
       btn.textContent = isOn ? 'Turn Off' : 'Turn On';
 
-      document.getElementById('fan-icon').className = 'w-12 h-12 transition-all duration-300 ' +
-         (isOn ? 'text-black animate-spin' : 'text-neutral-300');
+      const fanVisual = document.getElementById('fan-visual');
+      fanVisual.className = 'w-20 h-20 rounded-full flex items-center justify-center transition-all duration-300 ' +
+         (isOn ? 'bg-neutral-900 border-2 border-black' : 'bg-neutral-50 border-2 border-neutral-200');
+
+      const fanIcon = document.getElementById('fan-icon');
+      fanIcon.className = 'w-10 h-10 transition-all duration-300 ' +
+         (isOn ? 'text-white fan-spinning' : 'text-neutral-300');
 
       document.getElementById('speed-section').classList.toggle('hidden', !isOn);
       document.getElementById('speed-slider').value = currentSpeed;
@@ -500,7 +664,7 @@
                   backgroundColor: 'rgba(0, 0, 0, 0.05)',
                   fill: true,
                   tension: 0.4,
-                  pointRadius: 1.5,
+                  pointRadius: 0,
                   pointHoverRadius: 4,
                   borderWidth: 1.5,
                }]
@@ -508,9 +672,25 @@
             options: {
                responsive: true,
                maintainAspectRatio: false,
+               interaction: {
+                  mode: 'index',
+                  intersect: false
+               },
                plugins: {
                   legend: {
                      display: false
+                  },
+                  tooltip: {
+                     backgroundColor: '#000',
+                     titleFont: {
+                        size: 10
+                     },
+                     bodyFont: {
+                        size: 11
+                     },
+                     padding: 8,
+                     cornerRadius: 6,
+                     displayColors: false
                   }
                },
                scales: {
@@ -572,7 +752,7 @@
          isListening = true;
          updateMicUI(true);
          document.getElementById('mic-status').textContent = 'Listening...';
-         document.getElementById('mic-status').className = 'text-xs text-black font-medium';
+         document.getElementById('mic-status').className = 'text-[11px] text-black font-medium';
       };
 
       recognition.onresult = (event) => {
@@ -610,10 +790,10 @@
                   } catch (e) {}
                }
             }, 500);
-            document.getElementById('mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
+            document.getElementById('mic-status').textContent = 'Hands-free active — say "Hey Gout"';
          } else {
-            document.getElementById('mic-status').textContent = 'Click the mic to speak a command';
-            document.getElementById('mic-status').className = 'text-xs text-neutral-500';
+            document.getElementById('mic-status').textContent = 'Click the mic or say "Hey Gout"';
+            document.getElementById('mic-status').className = 'text-[11px] text-neutral-500';
          }
       };
 
@@ -637,7 +817,7 @@
       if (isHandsFree) {
          if (!recognition && !initSpeech()) return;
          recognition.continuous = true;
-         document.getElementById('mic-status').textContent = 'Hands-free — say "Hey Fan" + command';
+         document.getElementById('mic-status').textContent = 'Hands-free active — say "Hey Fan"';
          if (!isListening) {
             try {
                recognition.start();
@@ -743,14 +923,14 @@
          const res = await axios.get('/api/sinric/status');
          if (res.data.connected) {
             dot.className = 'w-2 h-2 rounded-full bg-black';
-            text.textContent = 'Connected — ' + (res.data.device_id || 'N/A');
+            text.textContent = 'Connected';
          } else {
             dot.className = 'w-2 h-2 rounded-full bg-neutral-300';
-            text.textContent = 'Sinric not configured';
+            text.textContent = 'Not configured';
          }
       } catch (e) {
          dot.className = 'w-2 h-2 rounded-full bg-neutral-300';
-         text.textContent = 'Sinric not configured';
+         text.textContent = 'Not configured';
       }
    }
 

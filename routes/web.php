@@ -3,7 +3,6 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
-use App\Http\Controllers\AlertWebController;
 use App\Http\Controllers\TemperatureControlController;
 use Illuminate\Support\Facades\Route;
 
@@ -30,14 +29,6 @@ Route::middleware('auth')->group(function () {
     // Device Management (CRUD)
     Route::resource('devices', DeviceController::class);
     Route::post('/devices/{device}/command', [DeviceController::class, 'sendCommand'])->name('devices.command');
-
-    // Alerts
-    Route::get('/alerts', [AlertWebController::class, 'index'])->name('alerts.index');
-    Route::get('/alerts/create', [AlertWebController::class, 'create'])->name('alerts.create');
-    Route::post('/alerts', [AlertWebController::class, 'store'])->name('alerts.store');
-    Route::patch('/alerts/{alert}/read', [AlertWebController::class, 'markRead'])->name('alerts.mark-read');
-    Route::post('/alerts/read-all', [AlertWebController::class, 'markAllRead'])->name('alerts.mark-all-read');
-    Route::delete('/alerts/{alert}', [AlertWebController::class, 'destroy'])->name('alerts.destroy');
 
     // Voice Control
     Route::get('/voice-control', function () {
